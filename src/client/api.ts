@@ -322,6 +322,51 @@ export interface BroadcastContractInvocationRequest {
     'signed_payload': string;
 }
 /**
+ * External Transaction Broadcast Response
+ * @export
+ * @interface BroadcastExternalTransaction200Response
+ */
+export interface BroadcastExternalTransaction200Response {
+    /**
+     * The transaction hash
+     * @type {string}
+     * @memberof BroadcastExternalTransaction200Response
+     */
+    'transaction_hash': string;
+    /**
+     * The link to view the transaction on a block explorer. This is optional and may not be present for all transactions.
+     * @type {string}
+     * @memberof BroadcastExternalTransaction200Response
+     */
+    'transaction_link'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface BroadcastExternalTransactionRequest
+ */
+export interface BroadcastExternalTransactionRequest {
+    /**
+     * The hex-encoded signed payload of the external address transaction.
+     * @type {string}
+     * @memberof BroadcastExternalTransactionRequest
+     */
+    'signed_payload': string;
+}
+/**
+ * 
+ * @export
+ * @interface BroadcastExternalTransferRequest
+ */
+export interface BroadcastExternalTransferRequest {
+    /**
+     * The hex-encoded signed payload of the external transfer
+     * @type {string}
+     * @memberof BroadcastExternalTransferRequest
+     */
+    'signed_payload': string;
+}
+/**
  * 
  * @export
  * @interface BroadcastStakingOperationRequest
@@ -375,6 +420,19 @@ export interface BroadcastTransferRequest {
 /**
  * 
  * @export
+ * @interface BroadcastUserOperationRequest
+ */
+export interface BroadcastUserOperationRequest {
+    /**
+     * The hex-encoded signature of the user operation.
+     * @type {string}
+     * @memberof BroadcastUserOperationRequest
+     */
+    'signature': string;
+}
+/**
+ * 
+ * @export
  * @interface BuildStakingOperationRequest
  */
 export interface BuildStakingOperationRequest {
@@ -408,6 +466,93 @@ export interface BuildStakingOperationRequest {
      * @memberof BuildStakingOperationRequest
      */
     'options': { [key: string]: string; };
+}
+/**
+ * An action that will be bundled into a user operation.
+ * @export
+ * @interface Call
+ */
+export interface Call {
+    /**
+     * The address the call is interacting with.
+     * @type {string}
+     * @memberof Call
+     */
+    'to': string;
+    /**
+     * The hex-encoded data to send with the call.
+     * @type {string}
+     * @memberof Call
+     */
+    'data': string;
+    /**
+     * The string-encoded integer value to send with the call.
+     * @type {string}
+     * @memberof Call
+     */
+    'value': string;
+}
+/**
+ * 
+ * @export
+ * @interface CompileSmartContractRequest
+ */
+export interface CompileSmartContractRequest {
+    /**
+     * The JSON input containing the Solidity code, dependencies, and compiler settings.
+     * @type {string}
+     * @memberof CompileSmartContractRequest
+     */
+    'solidity_input_json': string;
+    /**
+     * The name of the contract to compile.
+     * @type {string}
+     * @memberof CompileSmartContractRequest
+     */
+    'contract_name': string;
+    /**
+     * The version of the Solidity compiler to use.
+     * @type {string}
+     * @memberof CompileSmartContractRequest
+     */
+    'solidity_compiler_version': string;
+}
+/**
+ * Represents a compiled smart contract that can be deployed onchain
+ * @export
+ * @interface CompiledSmartContract
+ */
+export interface CompiledSmartContract {
+    /**
+     * The unique identifier of the compiled smart contract.
+     * @type {string}
+     * @memberof CompiledSmartContract
+     */
+    'compiled_smart_contract_id'?: string;
+    /**
+     * The JSON-encoded input for the Solidity compiler
+     * @type {string}
+     * @memberof CompiledSmartContract
+     */
+    'solidity_input_json'?: string;
+    /**
+     * The contract creation bytecode which will be used with constructor arguments to deploy the contract
+     * @type {string}
+     * @memberof CompiledSmartContract
+     */
+    'contract_creation_bytecode'?: string;
+    /**
+     * The JSON-encoded ABI of the contract
+     * @type {string}
+     * @memberof CompiledSmartContract
+     */
+    'abi'?: string;
+    /**
+     * The name of the smart contract to deploy
+     * @type {string}
+     * @memberof CompiledSmartContract
+     */
+    'contract_name'?: string;
 }
 /**
  * Represents a single decoded event emitted by a smart contract
@@ -682,6 +827,43 @@ export interface CreateContractInvocationRequest {
 /**
  * 
  * @export
+ * @interface CreateExternalTransferRequest
+ */
+export interface CreateExternalTransferRequest {
+    /**
+     * The amount to transfer
+     * @type {string}
+     * @memberof CreateExternalTransferRequest
+     */
+    'amount': string;
+    /**
+     * The ID of the asset to transfer. Can be an asset symbol or a token contract address.
+     * @type {string}
+     * @memberof CreateExternalTransferRequest
+     */
+    'asset_id': string;
+    /**
+     * The destination address, which can be a 0x address, Basename, or ENS name
+     * @type {string}
+     * @memberof CreateExternalTransferRequest
+     */
+    'destination': string;
+    /**
+     * Whether the transfer uses sponsored gas
+     * @type {boolean}
+     * @memberof CreateExternalTransferRequest
+     */
+    'gasless': boolean;
+    /**
+     * When true, the transfer will be submitted immediately. Otherwise, the transfer will be batched. Defaults to false. Note: Requires the gasless option to be set to true. 
+     * @type {boolean}
+     * @memberof CreateExternalTransferRequest
+     */
+    'skip_batching'?: boolean;
+}
+/**
+ * 
+ * @export
  * @interface CreateFundOperationRequest
  */
 export interface CreateFundOperationRequest {
@@ -692,7 +874,7 @@ export interface CreateFundOperationRequest {
      */
     'amount': string;
     /**
-     * The ID of the asset to fund the address with.
+     * The ID of the asset to fund the address with. Can be an asset symbol or a token contract address.
      * @type {string}
      * @memberof CreateFundOperationRequest
      */
@@ -717,7 +899,7 @@ export interface CreateFundQuoteRequest {
      */
     'amount': string;
     /**
-     * The ID of the asset to fund the address with.
+     * The ID of the asset to fund the address with. Can be an asset symbol alias or a token contract address.
      * @type {string}
      * @memberof CreateFundQuoteRequest
      */
@@ -785,9 +967,28 @@ export interface CreateSmartContractRequest {
      * @memberof CreateSmartContractRequest
      */
     'options': SmartContractOptions;
+    /**
+     * The optional UUID of the compiled smart contract to deploy. This field is only required when SmartContractType is set to custom.
+     * @type {string}
+     * @memberof CreateSmartContractRequest
+     */
+    'compiled_smart_contract_id'?: string;
 }
 
 
+/**
+ * 
+ * @export
+ * @interface CreateSmartWalletRequest
+ */
+export interface CreateSmartWalletRequest {
+    /**
+     * The address of the owner of the smart wallet.
+     * @type {string}
+     * @memberof CreateSmartWalletRequest
+     */
+    'owner': string;
+}
 /**
  * 
  * @export
@@ -863,7 +1064,7 @@ export interface CreateTransferRequest {
      */
     'network_id': string;
     /**
-     * The ID of the asset to transfer
+     * The ID of the asset to transfer. Can be an asset symbol or a token contract address.
      * @type {string}
      * @memberof CreateTransferRequest
      */
@@ -880,6 +1081,31 @@ export interface CreateTransferRequest {
      * @memberof CreateTransferRequest
      */
     'gasless'?: boolean;
+    /**
+     * When true, the transfer will be submitted immediately. Otherwise, the transfer will be batched. Defaults to false
+     * @type {boolean}
+     * @memberof CreateTransferRequest
+     */
+    'skip_batching'?: boolean;
+}
+/**
+ * 
+ * @export
+ * @interface CreateUserOperationRequest
+ */
+export interface CreateUserOperationRequest {
+    /**
+     * The list of calls to make from the smart wallet.
+     * @type {Array<Call>}
+     * @memberof CreateUserOperationRequest
+     */
+    'calls': Array<Call>;
+    /**
+     * The URL of the paymaster to use for the user operation.
+     * @type {string}
+     * @memberof CreateUserOperationRequest
+     */
+    'paymaster_url'?: string;
 }
 /**
  * 
@@ -1350,6 +1576,12 @@ export interface EthereumTransaction {
      * @memberof EthereumTransaction
      */
     'rlp_encoded_tx'?: string;
+    /**
+     * 
+     * @type {TransactionReceipt}
+     * @memberof EthereumTransaction
+     */
+    'receipt'?: TransactionReceipt;
 }
 /**
  * 
@@ -1523,11 +1755,17 @@ export interface EthereumValidatorMetadata {
      */
     'public_key': string;
     /**
-     * The address to which the validator\'s rewards are sent.
+     * The 20-byte address to which the validator\'s rewards are sent.
      * @type {string}
      * @memberof EthereumValidatorMetadata
      */
     'withdrawal_address': string;
+    /**
+     * The 32-byte field that determines where and how a validator’s staked ETH and rewards can be withdrawn.
+     * @type {string}
+     * @memberof EthereumValidatorMetadata
+     */
+    'withdrawal_credentials': string;
     /**
      * Whether the validator has been slashed.
      * @type {boolean}
@@ -1564,6 +1802,18 @@ export interface EthereumValidatorMetadata {
      * @memberof EthereumValidatorMetadata
      */
     'effective_balance': Balance;
+    /**
+     * The address for execution layer rewards (MEV & tx fees). If using a reward splitter plan, this is a smart contract address that splits rewards based on defined commissions and send a portion to the forwarded_fee_recipient_address. 
+     * @type {string}
+     * @memberof EthereumValidatorMetadata
+     */
+    'fee_recipient_address': string;
+    /**
+     * If using a reward splitter plan, this address receives a defined percentage of the total execution layer rewards. 
+     * @type {string}
+     * @memberof EthereumValidatorMetadata
+     */
+    'forwarded_fee_recipient_address'?: string;
 }
 /**
  * The faucet transaction
@@ -2113,12 +2363,17 @@ export type NetworkProtocolFamilyEnum = typeof NetworkProtocolFamilyEnum[keyof t
 export const NetworkIdentifier = {
     BaseSepolia: 'base-sepolia',
     BaseMainnet: 'base-mainnet',
-    EthereumHolesky: 'ethereum-holesky',
+    EthereumHoodi: 'ethereum-hoodi',
+    EthereumSepolia: 'ethereum-sepolia',
     EthereumMainnet: 'ethereum-mainnet',
     PolygonMainnet: 'polygon-mainnet',
     SolanaDevnet: 'solana-devnet',
     SolanaMainnet: 'solana-mainnet',
-    ArbitrumMainnet: 'arbitrum-mainnet'
+    ArbitrumMainnet: 'arbitrum-mainnet',
+    ArbitrumSepolia: 'arbitrum-sepolia',
+    BitcoinMainnet: 'bitcoin-mainnet',
+    NearTestnet: 'near-testnet',
+    NearMainnet: 'near-mainnet'
 } as const;
 
 export type NetworkIdentifier = typeof NetworkIdentifier[keyof typeof NetworkIdentifier];
@@ -2710,6 +2965,12 @@ export interface SmartContract {
      * @memberof SmartContract
      */
     'is_external': boolean;
+    /**
+     * The ID of the compiled smart contract that was used to deploy this contract
+     * @type {string}
+     * @memberof SmartContract
+     */
+    'compiled_smart_contract_id'?: string;
 }
 
 
@@ -2858,7 +3119,7 @@ export interface SmartContractList {
  * Options for smart contract creation
  * @export
  */
-export type SmartContractOptions = MultiTokenContractOptions | NFTContractOptions | TokenContractOptions;
+export type SmartContractOptions = MultiTokenContractOptions | NFTContractOptions | TokenContractOptions | string;
 
 /**
  * The type of the smart contract.
@@ -2876,6 +3137,56 @@ export const SmartContractType = {
 export type SmartContractType = typeof SmartContractType[keyof typeof SmartContractType];
 
 
+/**
+ * 
+ * @export
+ * @interface SmartWallet
+ */
+export interface SmartWallet {
+    /**
+     * The onchain address of the smart wallet.
+     * @type {string}
+     * @memberof SmartWallet
+     */
+    'address': string;
+    /**
+     * The list of owner addresses for the smart wallet.
+     * @type {Array<string>}
+     * @memberof SmartWallet
+     */
+    'owners': Array<string>;
+}
+/**
+ * Paginated list of smart wallets
+ * @export
+ * @interface SmartWalletList
+ */
+export interface SmartWalletList {
+    /**
+     * 
+     * @type {Array<SmartWallet>}
+     * @memberof SmartWalletList
+     */
+    'data': Array<SmartWallet>;
+    /**
+     * True if this list has another page of items after this one that can be fetched.
+     * @type {boolean}
+     * @memberof SmartWalletList
+     */
+    'has_more': boolean;
+    /**
+     * The page token to be used to fetch the next page.
+     * @type {string}
+     * @memberof SmartWalletList
+     */
+    'next_page': string;
+    /**
+     * The total number of wallets
+     * @type {number}
+     * @memberof SmartWalletList
+     */
+    'total_count': number;
+}
 /**
  * 
  * @export
@@ -3094,6 +3405,12 @@ export interface StakingContextContext {
      * @memberof StakingContextContext
      */
     'unstakeable_balance': Balance;
+    /**
+     * 
+     * @type {Balance}
+     * @memberof StakingContextContext
+     */
+    'pending_claimable_balance': Balance;
     /**
      * 
      * @type {Balance}
@@ -3487,6 +3804,62 @@ export type TransactionStatusEnum = typeof TransactionStatusEnum[keyof typeof Tr
 export type TransactionContent = EthereumTransaction;
 
 /**
+ * A log emitted from an onchain transaction.
+ * @export
+ * @interface TransactionLog
+ */
+export interface TransactionLog {
+    /**
+     * An onchain address of a contract.
+     * @type {string}
+     * @memberof TransactionLog
+     */
+    'address': string;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof TransactionLog
+     */
+    'topics': Array<string>;
+    /**
+     * The data included in this log.
+     * @type {string}
+     * @memberof TransactionLog
+     */
+    'data': string;
+}
+/**
+ * The receipt of an onchain transaction\'s execution.
+ * @export
+ * @interface TransactionReceipt
+ */
+export interface TransactionReceipt {
+    /**
+     * The status of a transaction is 1 if successful or 0 if it was reverted.
+     * @type {number}
+     * @memberof TransactionReceipt
+     */
+    'status': number;
+    /**
+     * 
+     * @type {Array<TransactionLog>}
+     * @memberof TransactionReceipt
+     */
+    'logs': Array<TransactionLog>;
+    /**
+     * The amount of gas actually used by this transaction.
+     * @type {string}
+     * @memberof TransactionReceipt
+     */
+    'gas_used': string;
+    /**
+     * The effective gas price the transaction was charged at.
+     * @type {string}
+     * @memberof TransactionReceipt
+     */
+    'effective_gas_price': string;
+}
+/**
  * 
  * @export
  * @enum {string}
@@ -3675,7 +4048,15 @@ export interface UpdateWebhookRequest {
      * @memberof UpdateWebhookRequest
      */
     'notification_uri'?: string;
+    /**
+     * 
+     * @type {WebhookStatus}
+     * @memberof UpdateWebhookRequest
+     */
+    'status'?: WebhookStatus;
 }
+
+
 /**
  * 
  * @export
@@ -3695,6 +4076,73 @@ export interface User {
      */
     'display_name'?: string;
 }
+/**
+ * 
+ * @export
+ * @interface UserOperation
+ */
+export interface UserOperation {
+    /**
+     * The ID of the user operation.
+     * @type {string}
+     * @memberof UserOperation
+     */
+    'id': string;
+    /**
+     * The ID of the network the user operation is being created on.
+     * @type {string}
+     * @memberof UserOperation
+     */
+    'network_id': string;
+    /**
+     * The list of calls to make from the smart wallet.
+     * @type {Array<Call>}
+     * @memberof UserOperation
+     */
+    'calls': Array<Call>;
+    /**
+     * The unique identifier for the user operation onchain. This is the payload that must be signed by one of the owners of the smart wallet to send the user operation.
+     * @type {string}
+     * @memberof UserOperation
+     */
+    'user_op_hash': string;
+    /**
+     * The hex-encoded hash that must be signed by the user.
+     * @type {string}
+     * @memberof UserOperation
+     * @deprecated
+     */
+    'unsigned_payload': string;
+    /**
+     * The hex-encoded signature of the user operation.
+     * @type {string}
+     * @memberof UserOperation
+     */
+    'signature'?: string;
+    /**
+     * The hash of the transaction that was broadcast.
+     * @type {string}
+     * @memberof UserOperation
+     */
+    'transaction_hash'?: string;
+    /**
+     * The status of the user operation.
+     * @type {string}
+     * @memberof UserOperation
+     */
+    'status': UserOperationStatusEnum;
+}
+
+export const UserOperationStatusEnum = {
+    Pending: 'pending',
+    Signed: 'signed',
+    Broadcast: 'broadcast',
+    Complete: 'complete',
+    Failed: 'failed'
+} as const;
+
+export type UserOperationStatusEnum = typeof UserOperationStatusEnum[keyof typeof UserOperationStatusEnum];
+
 /**
  * A validator onchain.
  * @export
@@ -3926,6 +4374,12 @@ export interface Webhook {
      * @memberof Webhook
      */
     'signature_header'?: string;
+    /**
+     * 
+     * @type {WebhookStatus}
+     * @memberof Webhook
+     */
+    'status': WebhookStatus;
 }
 
 
@@ -4016,6 +4470,20 @@ export interface WebhookSmartContractEventFilter {
      */
     'contract_addresses': Array<string>;
 }
+/**
+ * The status of the webhook.
+ * @export
+ * @enum {string}
+ */
+
+export const WebhookStatus = {
+    Active: 'active',
+    Inactive: 'inactive'
+} as const;
+
+export type WebhookStatus = typeof WebhookStatus[keyof typeof WebhookStatus];
+
+
 /**
  * Filter for wallet activity events. This filter allows the client to specify one or more wallet addresses to monitor for activities such as transactions, transfers, or other types of events that are associated with the specified addresses. 
  * @export
@@ -5970,6 +6438,154 @@ export class ContractInvocationsApi extends BaseAPI implements ContractInvocatio
 export const ExternalAddressesApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
+         * Broadcast an arbitrary transaction to the node constructed and signed by an external address.
+         * @summary Broadcast an arbitrary transaction.
+         * @param {string} networkId The ID of the network the external address belongs to.
+         * @param {string} addressId The onchain address of the transaction sender.
+         * @param {BroadcastExternalTransactionRequest} broadcastExternalTransactionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        broadcastExternalTransaction: async (networkId: string, addressId: string, broadcastExternalTransactionRequest: BroadcastExternalTransactionRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'networkId' is not null or undefined
+            assertParamExists('broadcastExternalTransaction', 'networkId', networkId)
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('broadcastExternalTransaction', 'addressId', addressId)
+            // verify required parameter 'broadcastExternalTransactionRequest' is not null or undefined
+            assertParamExists('broadcastExternalTransaction', 'broadcastExternalTransactionRequest', broadcastExternalTransactionRequest)
+            const localVarPath = `/v1/networks/{network_id}/addresses/{address_id}/transactions`
+                .replace(`{${"network_id"}}`, encodeURIComponent(String(networkId)))
+                .replace(`{${"address_id"}}`, encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+            // authentication session required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(broadcastExternalTransactionRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Broadcast an external address\'s transfer with a signed payload
+         * @summary Broadcast an external address\' transfer
+         * @param {string} networkId The ID of the network the address belongs to
+         * @param {string} addressId The ID of the address the transfer belongs to
+         * @param {string} transferId The ID of the transfer to broadcast
+         * @param {BroadcastExternalTransferRequest} broadcastExternalTransferRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        broadcastExternalTransfer: async (networkId: string, addressId: string, transferId: string, broadcastExternalTransferRequest: BroadcastExternalTransferRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'networkId' is not null or undefined
+            assertParamExists('broadcastExternalTransfer', 'networkId', networkId)
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('broadcastExternalTransfer', 'addressId', addressId)
+            // verify required parameter 'transferId' is not null or undefined
+            assertParamExists('broadcastExternalTransfer', 'transferId', transferId)
+            // verify required parameter 'broadcastExternalTransferRequest' is not null or undefined
+            assertParamExists('broadcastExternalTransfer', 'broadcastExternalTransferRequest', broadcastExternalTransferRequest)
+            const localVarPath = `/v1/networks/{network_id}/addresses/{address_id}/transfers/{transfer_id}/broadcast`
+                .replace(`{${"network_id"}}`, encodeURIComponent(String(networkId)))
+                .replace(`{${"address_id"}}`, encodeURIComponent(String(addressId)))
+                .replace(`{${"transfer_id"}}`, encodeURIComponent(String(transferId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(broadcastExternalTransferRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new transfer between addresses.
+         * @summary Create a new transfer
+         * @param {string} networkId The ID of the network the address is on
+         * @param {string} addressId The ID of the address to transfer from
+         * @param {CreateExternalTransferRequest} createExternalTransferRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createExternalTransfer: async (networkId: string, addressId: string, createExternalTransferRequest: CreateExternalTransferRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'networkId' is not null or undefined
+            assertParamExists('createExternalTransfer', 'networkId', networkId)
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('createExternalTransfer', 'addressId', addressId)
+            // verify required parameter 'createExternalTransferRequest' is not null or undefined
+            assertParamExists('createExternalTransfer', 'createExternalTransferRequest', createExternalTransferRequest)
+            const localVarPath = `/v1/networks/{network_id}/addresses/{address_id}/transfers`
+                .replace(`{${"network_id"}}`, encodeURIComponent(String(networkId)))
+                .replace(`{${"address_id"}}`, encodeURIComponent(String(addressId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createExternalTransferRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get the balance of an asset in an external address
          * @summary Get the balance of an asset in an external address
          * @param {string} networkId The ID of the blockchain network
@@ -6004,6 +6620,51 @@ export const ExternalAddressesApiAxiosParamCreator = function (configuration?: C
             await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
 
             // authentication session required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get an external address\' transfer by ID
+         * @summary Get a external address\' transfer
+         * @param {string} networkId The ID of the network the address is on
+         * @param {string} addressId The ID of the address the transfer belongs to
+         * @param {string} transferId The ID of the transfer to fetch
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getExternalTransfer: async (networkId: string, addressId: string, transferId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'networkId' is not null or undefined
+            assertParamExists('getExternalTransfer', 'networkId', networkId)
+            // verify required parameter 'addressId' is not null or undefined
+            assertParamExists('getExternalTransfer', 'addressId', addressId)
+            // verify required parameter 'transferId' is not null or undefined
+            assertParamExists('getExternalTransfer', 'transferId', transferId)
+            const localVarPath = `/v1/networks/{network_id}/addresses/{address_id}/transfers/{transfer_id}`
+                .replace(`{${"network_id"}}`, encodeURIComponent(String(networkId)))
+                .replace(`{${"address_id"}}`, encodeURIComponent(String(addressId)))
+                .replace(`{${"transfer_id"}}`, encodeURIComponent(String(transferId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
             await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
 
 
@@ -6179,6 +6840,52 @@ export const ExternalAddressesApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ExternalAddressesApiAxiosParamCreator(configuration)
     return {
         /**
+         * Broadcast an arbitrary transaction to the node constructed and signed by an external address.
+         * @summary Broadcast an arbitrary transaction.
+         * @param {string} networkId The ID of the network the external address belongs to.
+         * @param {string} addressId The onchain address of the transaction sender.
+         * @param {BroadcastExternalTransactionRequest} broadcastExternalTransactionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async broadcastExternalTransaction(networkId: string, addressId: string, broadcastExternalTransactionRequest: BroadcastExternalTransactionRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<BroadcastExternalTransaction200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.broadcastExternalTransaction(networkId, addressId, broadcastExternalTransactionRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ExternalAddressesApi.broadcastExternalTransaction']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Broadcast an external address\'s transfer with a signed payload
+         * @summary Broadcast an external address\' transfer
+         * @param {string} networkId The ID of the network the address belongs to
+         * @param {string} addressId The ID of the address the transfer belongs to
+         * @param {string} transferId The ID of the transfer to broadcast
+         * @param {BroadcastExternalTransferRequest} broadcastExternalTransferRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async broadcastExternalTransfer(networkId: string, addressId: string, transferId: string, broadcastExternalTransferRequest: BroadcastExternalTransferRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Transfer>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.broadcastExternalTransfer(networkId, addressId, transferId, broadcastExternalTransferRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ExternalAddressesApi.broadcastExternalTransfer']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Create a new transfer between addresses.
+         * @summary Create a new transfer
+         * @param {string} networkId The ID of the network the address is on
+         * @param {string} addressId The ID of the address to transfer from
+         * @param {CreateExternalTransferRequest} createExternalTransferRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createExternalTransfer(networkId: string, addressId: string, createExternalTransferRequest: CreateExternalTransferRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Transfer>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createExternalTransfer(networkId, addressId, createExternalTransferRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ExternalAddressesApi.createExternalTransfer']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Get the balance of an asset in an external address
          * @summary Get the balance of an asset in an external address
          * @param {string} networkId The ID of the blockchain network
@@ -6191,6 +6898,21 @@ export const ExternalAddressesApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getExternalAddressBalance(networkId, addressId, assetId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ExternalAddressesApi.getExternalAddressBalance']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get an external address\' transfer by ID
+         * @summary Get a external address\' transfer
+         * @param {string} networkId The ID of the network the address is on
+         * @param {string} addressId The ID of the address the transfer belongs to
+         * @param {string} transferId The ID of the transfer to fetch
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getExternalTransfer(networkId: string, addressId: string, transferId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Transfer>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getExternalTransfer(networkId, addressId, transferId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ExternalAddressesApi.getExternalTransfer']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -6250,6 +6972,43 @@ export const ExternalAddressesApiFactory = function (configuration?: Configurati
     const localVarFp = ExternalAddressesApiFp(configuration)
     return {
         /**
+         * Broadcast an arbitrary transaction to the node constructed and signed by an external address.
+         * @summary Broadcast an arbitrary transaction.
+         * @param {string} networkId The ID of the network the external address belongs to.
+         * @param {string} addressId The onchain address of the transaction sender.
+         * @param {BroadcastExternalTransactionRequest} broadcastExternalTransactionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        broadcastExternalTransaction(networkId: string, addressId: string, broadcastExternalTransactionRequest: BroadcastExternalTransactionRequest, options?: RawAxiosRequestConfig): AxiosPromise<BroadcastExternalTransaction200Response> {
+            return localVarFp.broadcastExternalTransaction(networkId, addressId, broadcastExternalTransactionRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Broadcast an external address\'s transfer with a signed payload
+         * @summary Broadcast an external address\' transfer
+         * @param {string} networkId The ID of the network the address belongs to
+         * @param {string} addressId The ID of the address the transfer belongs to
+         * @param {string} transferId The ID of the transfer to broadcast
+         * @param {BroadcastExternalTransferRequest} broadcastExternalTransferRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        broadcastExternalTransfer(networkId: string, addressId: string, transferId: string, broadcastExternalTransferRequest: BroadcastExternalTransferRequest, options?: RawAxiosRequestConfig): AxiosPromise<Transfer> {
+            return localVarFp.broadcastExternalTransfer(networkId, addressId, transferId, broadcastExternalTransferRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a new transfer between addresses.
+         * @summary Create a new transfer
+         * @param {string} networkId The ID of the network the address is on
+         * @param {string} addressId The ID of the address to transfer from
+         * @param {CreateExternalTransferRequest} createExternalTransferRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createExternalTransfer(networkId: string, addressId: string, createExternalTransferRequest: CreateExternalTransferRequest, options?: RawAxiosRequestConfig): AxiosPromise<Transfer> {
+            return localVarFp.createExternalTransfer(networkId, addressId, createExternalTransferRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get the balance of an asset in an external address
          * @summary Get the balance of an asset in an external address
          * @param {string} networkId The ID of the blockchain network
@@ -6260,6 +7019,18 @@ export const ExternalAddressesApiFactory = function (configuration?: Configurati
          */
         getExternalAddressBalance(networkId: string, addressId: string, assetId: string, options?: RawAxiosRequestConfig): AxiosPromise<Balance> {
             return localVarFp.getExternalAddressBalance(networkId, addressId, assetId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get an external address\' transfer by ID
+         * @summary Get a external address\' transfer
+         * @param {string} networkId The ID of the network the address is on
+         * @param {string} addressId The ID of the address the transfer belongs to
+         * @param {string} transferId The ID of the transfer to fetch
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getExternalTransfer(networkId: string, addressId: string, transferId: string, options?: RawAxiosRequestConfig): AxiosPromise<Transfer> {
+            return localVarFp.getExternalTransfer(networkId, addressId, transferId, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the status of a faucet transaction
@@ -6308,6 +7079,43 @@ export const ExternalAddressesApiFactory = function (configuration?: Configurati
  */
 export interface ExternalAddressesApiInterface {
     /**
+     * Broadcast an arbitrary transaction to the node constructed and signed by an external address.
+     * @summary Broadcast an arbitrary transaction.
+     * @param {string} networkId The ID of the network the external address belongs to.
+     * @param {string} addressId The onchain address of the transaction sender.
+     * @param {BroadcastExternalTransactionRequest} broadcastExternalTransactionRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApiInterface
+     */
+    broadcastExternalTransaction(networkId: string, addressId: string, broadcastExternalTransactionRequest: BroadcastExternalTransactionRequest, options?: RawAxiosRequestConfig): AxiosPromise<BroadcastExternalTransaction200Response>;
+
+    /**
+     * Broadcast an external address\'s transfer with a signed payload
+     * @summary Broadcast an external address\' transfer
+     * @param {string} networkId The ID of the network the address belongs to
+     * @param {string} addressId The ID of the address the transfer belongs to
+     * @param {string} transferId The ID of the transfer to broadcast
+     * @param {BroadcastExternalTransferRequest} broadcastExternalTransferRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApiInterface
+     */
+    broadcastExternalTransfer(networkId: string, addressId: string, transferId: string, broadcastExternalTransferRequest: BroadcastExternalTransferRequest, options?: RawAxiosRequestConfig): AxiosPromise<Transfer>;
+
+    /**
+     * Create a new transfer between addresses.
+     * @summary Create a new transfer
+     * @param {string} networkId The ID of the network the address is on
+     * @param {string} addressId The ID of the address to transfer from
+     * @param {CreateExternalTransferRequest} createExternalTransferRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApiInterface
+     */
+    createExternalTransfer(networkId: string, addressId: string, createExternalTransferRequest: CreateExternalTransferRequest, options?: RawAxiosRequestConfig): AxiosPromise<Transfer>;
+
+    /**
      * Get the balance of an asset in an external address
      * @summary Get the balance of an asset in an external address
      * @param {string} networkId The ID of the blockchain network
@@ -6318,6 +7126,18 @@ export interface ExternalAddressesApiInterface {
      * @memberof ExternalAddressesApiInterface
      */
     getExternalAddressBalance(networkId: string, addressId: string, assetId: string, options?: RawAxiosRequestConfig): AxiosPromise<Balance>;
+
+    /**
+     * Get an external address\' transfer by ID
+     * @summary Get a external address\' transfer
+     * @param {string} networkId The ID of the network the address is on
+     * @param {string} addressId The ID of the address the transfer belongs to
+     * @param {string} transferId The ID of the transfer to fetch
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApiInterface
+     */
+    getExternalTransfer(networkId: string, addressId: string, transferId: string, options?: RawAxiosRequestConfig): AxiosPromise<Transfer>;
 
     /**
      * Get the status of a faucet transaction
@@ -6366,6 +7186,49 @@ export interface ExternalAddressesApiInterface {
  */
 export class ExternalAddressesApi extends BaseAPI implements ExternalAddressesApiInterface {
     /**
+     * Broadcast an arbitrary transaction to the node constructed and signed by an external address.
+     * @summary Broadcast an arbitrary transaction.
+     * @param {string} networkId The ID of the network the external address belongs to.
+     * @param {string} addressId The onchain address of the transaction sender.
+     * @param {BroadcastExternalTransactionRequest} broadcastExternalTransactionRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApi
+     */
+    public broadcastExternalTransaction(networkId: string, addressId: string, broadcastExternalTransactionRequest: BroadcastExternalTransactionRequest, options?: RawAxiosRequestConfig) {
+        return ExternalAddressesApiFp(this.configuration).broadcastExternalTransaction(networkId, addressId, broadcastExternalTransactionRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Broadcast an external address\'s transfer with a signed payload
+     * @summary Broadcast an external address\' transfer
+     * @param {string} networkId The ID of the network the address belongs to
+     * @param {string} addressId The ID of the address the transfer belongs to
+     * @param {string} transferId The ID of the transfer to broadcast
+     * @param {BroadcastExternalTransferRequest} broadcastExternalTransferRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApi
+     */
+    public broadcastExternalTransfer(networkId: string, addressId: string, transferId: string, broadcastExternalTransferRequest: BroadcastExternalTransferRequest, options?: RawAxiosRequestConfig) {
+        return ExternalAddressesApiFp(this.configuration).broadcastExternalTransfer(networkId, addressId, transferId, broadcastExternalTransferRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new transfer between addresses.
+     * @summary Create a new transfer
+     * @param {string} networkId The ID of the network the address is on
+     * @param {string} addressId The ID of the address to transfer from
+     * @param {CreateExternalTransferRequest} createExternalTransferRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApi
+     */
+    public createExternalTransfer(networkId: string, addressId: string, createExternalTransferRequest: CreateExternalTransferRequest, options?: RawAxiosRequestConfig) {
+        return ExternalAddressesApiFp(this.configuration).createExternalTransfer(networkId, addressId, createExternalTransferRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Get the balance of an asset in an external address
      * @summary Get the balance of an asset in an external address
      * @param {string} networkId The ID of the blockchain network
@@ -6377,6 +7240,20 @@ export class ExternalAddressesApi extends BaseAPI implements ExternalAddressesAp
      */
     public getExternalAddressBalance(networkId: string, addressId: string, assetId: string, options?: RawAxiosRequestConfig) {
         return ExternalAddressesApiFp(this.configuration).getExternalAddressBalance(networkId, addressId, assetId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get an external address\' transfer by ID
+     * @summary Get a external address\' transfer
+     * @param {string} networkId The ID of the network the address is on
+     * @param {string} addressId The ID of the address the transfer belongs to
+     * @param {string} transferId The ID of the transfer to fetch
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ExternalAddressesApi
+     */
+    public getExternalTransfer(networkId: string, addressId: string, transferId: string, options?: RawAxiosRequestConfig) {
+        return ExternalAddressesApiFp(this.configuration).getExternalTransfer(networkId, addressId, transferId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -8288,6 +9165,45 @@ export class ServerSignersApi extends BaseAPI implements ServerSignersApiInterfa
 export const SmartContractsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
+         * Compile a smart contract
+         * @summary Compile a smart contract
+         * @param {CompileSmartContractRequest} compileSmartContractRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        compileSmartContract: async (compileSmartContractRequest: CompileSmartContractRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'compileSmartContractRequest' is not null or undefined
+            assertParamExists('compileSmartContract', 'compileSmartContractRequest', compileSmartContractRequest)
+            const localVarPath = `/v1/smart_contracts/compile`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(compileSmartContractRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a new smart contract
          * @summary Create a new smart contract
          * @param {string} walletId The ID of the wallet the address belongs to.
@@ -8631,6 +9547,19 @@ export const SmartContractsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = SmartContractsApiAxiosParamCreator(configuration)
     return {
         /**
+         * Compile a smart contract
+         * @summary Compile a smart contract
+         * @param {CompileSmartContractRequest} compileSmartContractRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async compileSmartContract(compileSmartContractRequest: CompileSmartContractRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CompiledSmartContract>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.compileSmartContract(compileSmartContractRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartContractsApi.compileSmartContract']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Create a new smart contract
          * @summary Create a new smart contract
          * @param {string} walletId The ID of the wallet the address belongs to.
@@ -8745,6 +9674,16 @@ export const SmartContractsApiFactory = function (configuration?: Configuration,
     const localVarFp = SmartContractsApiFp(configuration)
     return {
         /**
+         * Compile a smart contract
+         * @summary Compile a smart contract
+         * @param {CompileSmartContractRequest} compileSmartContractRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        compileSmartContract(compileSmartContractRequest: CompileSmartContractRequest, options?: RawAxiosRequestConfig): AxiosPromise<CompiledSmartContract> {
+            return localVarFp.compileSmartContract(compileSmartContractRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new smart contract
          * @summary Create a new smart contract
          * @param {string} walletId The ID of the wallet the address belongs to.
@@ -8837,6 +9776,16 @@ export const SmartContractsApiFactory = function (configuration?: Configuration,
  */
 export interface SmartContractsApiInterface {
     /**
+     * Compile a smart contract
+     * @summary Compile a smart contract
+     * @param {CompileSmartContractRequest} compileSmartContractRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartContractsApiInterface
+     */
+    compileSmartContract(compileSmartContractRequest: CompileSmartContractRequest, options?: RawAxiosRequestConfig): AxiosPromise<CompiledSmartContract>;
+
+    /**
      * Create a new smart contract
      * @summary Create a new smart contract
      * @param {string} walletId The ID of the wallet the address belongs to.
@@ -8928,6 +9877,18 @@ export interface SmartContractsApiInterface {
  * @extends {BaseAPI}
  */
 export class SmartContractsApi extends BaseAPI implements SmartContractsApiInterface {
+    /**
+     * Compile a smart contract
+     * @summary Compile a smart contract
+     * @param {CompileSmartContractRequest} compileSmartContractRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartContractsApi
+     */
+    public compileSmartContract(compileSmartContractRequest: CompileSmartContractRequest, options?: RawAxiosRequestConfig) {
+        return SmartContractsApiFp(this.configuration).compileSmartContract(compileSmartContractRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
     /**
      * Create a new smart contract
      * @summary Create a new smart contract
@@ -9023,6 +9984,604 @@ export class SmartContractsApi extends BaseAPI implements SmartContractsApiInter
      */
     public updateSmartContract(networkId: string, contractAddress: string, updateSmartContractRequest?: UpdateSmartContractRequest, options?: RawAxiosRequestConfig) {
         return SmartContractsApiFp(this.configuration).updateSmartContract(networkId, contractAddress, updateSmartContractRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * SmartWalletsApi - axios parameter creator
+ * @export
+ */
+export const SmartWalletsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Broadcast a user operation
+         * @summary Broadcast a user operation
+         * @param {string} smartWalletAddress The address of the smart wallet to broadcast the user operation from.
+         * @param {string} userOpHash The hash of the user operation to broadcast
+         * @param {BroadcastUserOperationRequest} [broadcastUserOperationRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        broadcastUserOperation: async (smartWalletAddress: string, userOpHash: string, broadcastUserOperationRequest?: BroadcastUserOperationRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'smartWalletAddress' is not null or undefined
+            assertParamExists('broadcastUserOperation', 'smartWalletAddress', smartWalletAddress)
+            // verify required parameter 'userOpHash' is not null or undefined
+            assertParamExists('broadcastUserOperation', 'userOpHash', userOpHash)
+            const localVarPath = `/v1/smart_wallets/{smart_wallet_address}/user_operations/{user_op_hash}/broadcast`
+                .replace(`{${"smart_wallet_address"}}`, encodeURIComponent(String(smartWalletAddress)))
+                .replace(`{${"user_op_hash"}}`, encodeURIComponent(String(userOpHash)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(broadcastUserOperationRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new smart wallet, not scoped to a given network.
+         * @summary Create a new smart wallet
+         * @param {CreateSmartWalletRequest} [createSmartWalletRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createSmartWallet: async (createSmartWalletRequest?: CreateSmartWalletRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/smart_wallets`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createSmartWalletRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new user operation on a smart wallet.
+         * @summary Create a new user operation
+         * @param {string} smartWalletAddress The address of the smart wallet to create the user operation on.
+         * @param {string} networkId The ID of the network to create the user operation on.
+         * @param {CreateUserOperationRequest} [createUserOperationRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createUserOperation: async (smartWalletAddress: string, networkId: string, createUserOperationRequest?: CreateUserOperationRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'smartWalletAddress' is not null or undefined
+            assertParamExists('createUserOperation', 'smartWalletAddress', smartWalletAddress)
+            // verify required parameter 'networkId' is not null or undefined
+            assertParamExists('createUserOperation', 'networkId', networkId)
+            const localVarPath = `/v1/smart_wallets/{smart_wallet_address}/networks/{network_id}/user_operations`
+                .replace(`{${"smart_wallet_address"}}`, encodeURIComponent(String(smartWalletAddress)))
+                .replace(`{${"network_id"}}`, encodeURIComponent(String(networkId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createUserOperationRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get smart wallet
+         * @summary Get smart wallet by address
+         * @param {string} smartWalletAddress The address of that smart wallet to fetch.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSmartWallet: async (smartWalletAddress: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'smartWalletAddress' is not null or undefined
+            assertParamExists('getSmartWallet', 'smartWalletAddress', smartWalletAddress)
+            const localVarPath = `/v1/smart_wallets/{smart_wallet_address}`
+                .replace(`{${"smart_wallet_address"}}`, encodeURIComponent(String(smartWalletAddress)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+            // authentication session required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get user operation
+         * @summary Get user operation
+         * @param {string} smartWalletAddress The address of the smart wallet the user operation belongs to.
+         * @param {string} userOpHash The hash of the user operation to fetch
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserOperation: async (smartWalletAddress: string, userOpHash: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'smartWalletAddress' is not null or undefined
+            assertParamExists('getUserOperation', 'smartWalletAddress', smartWalletAddress)
+            // verify required parameter 'userOpHash' is not null or undefined
+            assertParamExists('getUserOperation', 'userOpHash', userOpHash)
+            const localVarPath = `/v1/smart_wallets/{smart_wallet_address}/user_operations/{user_op_hash}`
+                .replace(`{${"smart_wallet_address"}}`, encodeURIComponent(String(smartWalletAddress)))
+                .replace(`{${"user_op_hash"}}`, encodeURIComponent(String(userOpHash)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+            // authentication session required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * List smart wallets
+         * @summary List smart wallets
+         * @param {number} [limit] A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
+         * @param {string} [page] A cursor for pagination across multiple pages of results. Don\&#39;t include this parameter on the first call. Use the next_page value returned in a previous response to request subsequent results.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listSmartWallets: async (limit?: number, page?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/v1/smart_wallets`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication apiKey required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+            // authentication session required
+            await setApiKeyToObject(localVarHeaderParameter, "Jwt", configuration)
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * SmartWalletsApi - functional programming interface
+ * @export
+ */
+export const SmartWalletsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = SmartWalletsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Broadcast a user operation
+         * @summary Broadcast a user operation
+         * @param {string} smartWalletAddress The address of the smart wallet to broadcast the user operation from.
+         * @param {string} userOpHash The hash of the user operation to broadcast
+         * @param {BroadcastUserOperationRequest} [broadcastUserOperationRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async broadcastUserOperation(smartWalletAddress: string, userOpHash: string, broadcastUserOperationRequest?: BroadcastUserOperationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserOperation>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.broadcastUserOperation(smartWalletAddress, userOpHash, broadcastUserOperationRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartWalletsApi.broadcastUserOperation']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Create a new smart wallet, not scoped to a given network.
+         * @summary Create a new smart wallet
+         * @param {CreateSmartWalletRequest} [createSmartWalletRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createSmartWallet(createSmartWalletRequest?: CreateSmartWalletRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SmartWallet>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createSmartWallet(createSmartWalletRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartWalletsApi.createSmartWallet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Create a new user operation on a smart wallet.
+         * @summary Create a new user operation
+         * @param {string} smartWalletAddress The address of the smart wallet to create the user operation on.
+         * @param {string} networkId The ID of the network to create the user operation on.
+         * @param {CreateUserOperationRequest} [createUserOperationRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createUserOperation(smartWalletAddress: string, networkId: string, createUserOperationRequest?: CreateUserOperationRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserOperation>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createUserOperation(smartWalletAddress, networkId, createUserOperationRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartWalletsApi.createUserOperation']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get smart wallet
+         * @summary Get smart wallet by address
+         * @param {string} smartWalletAddress The address of that smart wallet to fetch.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getSmartWallet(smartWalletAddress: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SmartWallet>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSmartWallet(smartWalletAddress, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartWalletsApi.getSmartWallet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get user operation
+         * @summary Get user operation
+         * @param {string} smartWalletAddress The address of the smart wallet the user operation belongs to.
+         * @param {string} userOpHash The hash of the user operation to fetch
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getUserOperation(smartWalletAddress: string, userOpHash: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserOperation>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getUserOperation(smartWalletAddress, userOpHash, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartWalletsApi.getUserOperation']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * List smart wallets
+         * @summary List smart wallets
+         * @param {number} [limit] A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
+         * @param {string} [page] A cursor for pagination across multiple pages of results. Don\&#39;t include this parameter on the first call. Use the next_page value returned in a previous response to request subsequent results.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listSmartWallets(limit?: number, page?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SmartWalletList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listSmartWallets(limit, page, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SmartWalletsApi.listSmartWallets']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * SmartWalletsApi - factory interface
+ * @export
+ */
+export const SmartWalletsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = SmartWalletsApiFp(configuration)
+    return {
+        /**
+         * Broadcast a user operation
+         * @summary Broadcast a user operation
+         * @param {string} smartWalletAddress The address of the smart wallet to broadcast the user operation from.
+         * @param {string} userOpHash The hash of the user operation to broadcast
+         * @param {BroadcastUserOperationRequest} [broadcastUserOperationRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        broadcastUserOperation(smartWalletAddress: string, userOpHash: string, broadcastUserOperationRequest?: BroadcastUserOperationRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserOperation> {
+            return localVarFp.broadcastUserOperation(smartWalletAddress, userOpHash, broadcastUserOperationRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a new smart wallet, not scoped to a given network.
+         * @summary Create a new smart wallet
+         * @param {CreateSmartWalletRequest} [createSmartWalletRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createSmartWallet(createSmartWalletRequest?: CreateSmartWalletRequest, options?: RawAxiosRequestConfig): AxiosPromise<SmartWallet> {
+            return localVarFp.createSmartWallet(createSmartWalletRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a new user operation on a smart wallet.
+         * @summary Create a new user operation
+         * @param {string} smartWalletAddress The address of the smart wallet to create the user operation on.
+         * @param {string} networkId The ID of the network to create the user operation on.
+         * @param {CreateUserOperationRequest} [createUserOperationRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createUserOperation(smartWalletAddress: string, networkId: string, createUserOperationRequest?: CreateUserOperationRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserOperation> {
+            return localVarFp.createUserOperation(smartWalletAddress, networkId, createUserOperationRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get smart wallet
+         * @summary Get smart wallet by address
+         * @param {string} smartWalletAddress The address of that smart wallet to fetch.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSmartWallet(smartWalletAddress: string, options?: RawAxiosRequestConfig): AxiosPromise<SmartWallet> {
+            return localVarFp.getSmartWallet(smartWalletAddress, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get user operation
+         * @summary Get user operation
+         * @param {string} smartWalletAddress The address of the smart wallet the user operation belongs to.
+         * @param {string} userOpHash The hash of the user operation to fetch
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getUserOperation(smartWalletAddress: string, userOpHash: string, options?: RawAxiosRequestConfig): AxiosPromise<UserOperation> {
+            return localVarFp.getUserOperation(smartWalletAddress, userOpHash, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * List smart wallets
+         * @summary List smart wallets
+         * @param {number} [limit] A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
+         * @param {string} [page] A cursor for pagination across multiple pages of results. Don\&#39;t include this parameter on the first call. Use the next_page value returned in a previous response to request subsequent results.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listSmartWallets(limit?: number, page?: string, options?: RawAxiosRequestConfig): AxiosPromise<SmartWalletList> {
+            return localVarFp.listSmartWallets(limit, page, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * SmartWalletsApi - interface
+ * @export
+ * @interface SmartWalletsApi
+ */
+export interface SmartWalletsApiInterface {
+    /**
+     * Broadcast a user operation
+     * @summary Broadcast a user operation
+     * @param {string} smartWalletAddress The address of the smart wallet to broadcast the user operation from.
+     * @param {string} userOpHash The hash of the user operation to broadcast
+     * @param {BroadcastUserOperationRequest} [broadcastUserOperationRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApiInterface
+     */
+    broadcastUserOperation(smartWalletAddress: string, userOpHash: string, broadcastUserOperationRequest?: BroadcastUserOperationRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserOperation>;
+
+    /**
+     * Create a new smart wallet, not scoped to a given network.
+     * @summary Create a new smart wallet
+     * @param {CreateSmartWalletRequest} [createSmartWalletRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApiInterface
+     */
+    createSmartWallet(createSmartWalletRequest?: CreateSmartWalletRequest, options?: RawAxiosRequestConfig): AxiosPromise<SmartWallet>;
+
+    /**
+     * Create a new user operation on a smart wallet.
+     * @summary Create a new user operation
+     * @param {string} smartWalletAddress The address of the smart wallet to create the user operation on.
+     * @param {string} networkId The ID of the network to create the user operation on.
+     * @param {CreateUserOperationRequest} [createUserOperationRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApiInterface
+     */
+    createUserOperation(smartWalletAddress: string, networkId: string, createUserOperationRequest?: CreateUserOperationRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserOperation>;
+
+    /**
+     * Get smart wallet
+     * @summary Get smart wallet by address
+     * @param {string} smartWalletAddress The address of that smart wallet to fetch.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApiInterface
+     */
+    getSmartWallet(smartWalletAddress: string, options?: RawAxiosRequestConfig): AxiosPromise<SmartWallet>;
+
+    /**
+     * Get user operation
+     * @summary Get user operation
+     * @param {string} smartWalletAddress The address of the smart wallet the user operation belongs to.
+     * @param {string} userOpHash The hash of the user operation to fetch
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApiInterface
+     */
+    getUserOperation(smartWalletAddress: string, userOpHash: string, options?: RawAxiosRequestConfig): AxiosPromise<UserOperation>;
+
+    /**
+     * List smart wallets
+     * @summary List smart wallets
+     * @param {number} [limit] A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
+     * @param {string} [page] A cursor for pagination across multiple pages of results. Don\&#39;t include this parameter on the first call. Use the next_page value returned in a previous response to request subsequent results.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApiInterface
+     */
+    listSmartWallets(limit?: number, page?: string, options?: RawAxiosRequestConfig): AxiosPromise<SmartWalletList>;
+
+}
+
+/**
+ * SmartWalletsApi - object-oriented interface
+ * @export
+ * @class SmartWalletsApi
+ * @extends {BaseAPI}
+ */
+export class SmartWalletsApi extends BaseAPI implements SmartWalletsApiInterface {
+    /**
+     * Broadcast a user operation
+     * @summary Broadcast a user operation
+     * @param {string} smartWalletAddress The address of the smart wallet to broadcast the user operation from.
+     * @param {string} userOpHash The hash of the user operation to broadcast
+     * @param {BroadcastUserOperationRequest} [broadcastUserOperationRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApi
+     */
+    public broadcastUserOperation(smartWalletAddress: string, userOpHash: string, broadcastUserOperationRequest?: BroadcastUserOperationRequest, options?: RawAxiosRequestConfig) {
+        return SmartWalletsApiFp(this.configuration).broadcastUserOperation(smartWalletAddress, userOpHash, broadcastUserOperationRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new smart wallet, not scoped to a given network.
+     * @summary Create a new smart wallet
+     * @param {CreateSmartWalletRequest} [createSmartWalletRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApi
+     */
+    public createSmartWallet(createSmartWalletRequest?: CreateSmartWalletRequest, options?: RawAxiosRequestConfig) {
+        return SmartWalletsApiFp(this.configuration).createSmartWallet(createSmartWalletRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new user operation on a smart wallet.
+     * @summary Create a new user operation
+     * @param {string} smartWalletAddress The address of the smart wallet to create the user operation on.
+     * @param {string} networkId The ID of the network to create the user operation on.
+     * @param {CreateUserOperationRequest} [createUserOperationRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApi
+     */
+    public createUserOperation(smartWalletAddress: string, networkId: string, createUserOperationRequest?: CreateUserOperationRequest, options?: RawAxiosRequestConfig) {
+        return SmartWalletsApiFp(this.configuration).createUserOperation(smartWalletAddress, networkId, createUserOperationRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get smart wallet
+     * @summary Get smart wallet by address
+     * @param {string} smartWalletAddress The address of that smart wallet to fetch.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApi
+     */
+    public getSmartWallet(smartWalletAddress: string, options?: RawAxiosRequestConfig) {
+        return SmartWalletsApiFp(this.configuration).getSmartWallet(smartWalletAddress, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get user operation
+     * @summary Get user operation
+     * @param {string} smartWalletAddress The address of the smart wallet the user operation belongs to.
+     * @param {string} userOpHash The hash of the user operation to fetch
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApi
+     */
+    public getUserOperation(smartWalletAddress: string, userOpHash: string, options?: RawAxiosRequestConfig) {
+        return SmartWalletsApiFp(this.configuration).getUserOperation(smartWalletAddress, userOpHash, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * List smart wallets
+     * @summary List smart wallets
+     * @param {number} [limit] A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
+     * @param {string} [page] A cursor for pagination across multiple pages of results. Don\&#39;t include this parameter on the first call. Use the next_page value returned in a previous response to request subsequent results.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SmartWalletsApi
+     */
+    public listSmartWallets(limit?: number, page?: string, options?: RawAxiosRequestConfig) {
+        return SmartWalletsApiFp(this.configuration).listSmartWallets(limit, page, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

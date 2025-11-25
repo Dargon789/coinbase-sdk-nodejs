@@ -1,5 +1,80 @@
 # Coinbase Node.js SDK Changelog
 
+## Unreleased
+
+## [0.25.0] - 2025-06-04
+
+### Removed
+
+- Removed support for network Holesky. It has been replaced by Hoodi.
+
+## [0.24.0] - 2025-05-06
+
+- Add support for execution layer consolidations post Pectra.
+
+## [0.23.0] - 2025-04-16
+
+- Add support for both consensus and execution based withdrawals post-pectra.
+
+## [0.22.0] - 2025-04-02
+
+- Add `ExecutionLayerWithdrawalOptionsBuilder` to allow for native ETH execution layer withdrawals as defined in https://eips.ethereum.org/EIPS/eip-7002.
+- Add `Hoodi` network support.
+
+## [0.21.0] - 2025-02-28
+
+- Add `getWithdrawalCredentials` getter for `Validator` object to expose withdrawal credentials of an Ethereum validator. 
+
+## [0.20.0] - 2025-02-25
+
+### Added
+- Add support for Ed25519 API keys.
+
+## [0.19.0] - 2025-02-21
+### Added
+- Ability to create a SmartWallet and send a user operation.
+- Add `EURC` and `cbBTC` asset support.
+
+## [0.18.1] - 2025-02-13
+
+### Fixed
+- Fixed a bug where import_wallet would fail if the address list was not being sorted by index.
+
+## [0.18.0] - 2025-02-13
+
+### Added
+- Add `TransactionReceipt` and `TransactionLog` to contract invocation response.
+
+## [0.17.0] - 2025-02-01
+
+### Added
+- Add `broadcastExternalTransaction` method to `ExternalAddress` to broadcast an external transaction.
+
+## [0.16.0] - 2025-01-28
+
+### Added
+- Add E2E test for gasless transfers `Wallet.createTransfer({..., gasless: true})`
+
+### Fixed
+- Fixed a bug where non-checksummed asset IDs were throwing an error.
+
+## [0.15.0] - 2025-01-17
+
+### Added
+
+- Add `deployContract` method to `WalletAddress` and `Wallet` to deploy an arbitrary contract.
+
+## [0.14.1] - 2025-01-17
+
+### Fixed
+
+- Allow wallet mnemonic seed import to optionally accept `networkId` input argument.
+
+## [0.14.0] - 2025-01-14
+
+### Added
+- Add `skipBatching` option to `Wallet.createTransfer` to allow for lower latency gasless transfers.
+
 ## [0.13.0] - 2024-12-19
 
 ### Added

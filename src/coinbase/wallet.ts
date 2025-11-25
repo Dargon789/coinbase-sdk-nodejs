@@ -6,6 +6,7 @@ import * as crypto from "crypto";
 import Decimal from "decimal.js";
 import { ethers } from "ethers";
 import * as fs from "fs";
+import * as ed2curve from "ed2curve";
 import * as secp256k1 from "secp256k1";
 import { Address as AddressModel, Wallet as WalletModel } from "../client";
 import { Address } from "./address";
@@ -39,6 +40,7 @@ import {
   PaginationResponse,
   CreateFundOptions,
   CreateQuoteOptions,
+  CreateCustomContractOptions,
 } from "./types";
 import { convertStringToHex, delay, formatDate, getWeekBackDate } from "./utils";
 import { StakingOperation } from "./staking_operation";
@@ -143,12 +145,16 @@ export class Wallet {
    *     Allows for the loading of an existing CDP wallet into CDP.
    *   - If MnemonicSeedPhrase: Must contain a valid BIP-39 mnemonic phrase (12, 15, 18, 21, or 24 words).
    *     Allows for the import of an external wallet into CDP as a 1-of-1 wallet.
+   * @param networkId - the ID of the blockchain network. Defaults to 'base-sepolia'.
    * @returns A Promise that resolves to the loaded Wallet instance
    * @throws {ArgumentError} If the data format is invalid.
    * @throws {ArgumentError} If the seed is not provided.
    * @throws {ArgumentError} If the mnemonic seed phrase is invalid.
    */
-  public static async import(data: WalletData | MnemonicSeedPhrase): Promise<Wallet> {
+  public static async import(
+    data: WalletData | MnemonicSeedPhrase,
+    networkId: string = Coinbase.networks.BaseSepolia,
+  ): Promise<Wallet> {
     // Check if data is a mnemonic seed phrase object
     if (isMnemonicSeedPhrase(data)) {
       // Handle mnemonic seed phrase object import
@@ -168,7 +174,7 @@ export class Wallet {
       // Create wallet using the provided seed
       const wallet = await Wallet.createWithSeed({
         seed: seed,
-        networkId: Coinbase.networks.BaseSepolia,
+        networkId,
       });
 
       // Ensure the wallet is created
@@ -385,8 +391,8 @@ export class Wallet {
       Wallet.MAX_ADDRESSES,
     );
 
-    const addresses = response.data.data.map((address, index) => {
-      return this.buildWalletAddress(address, index);
+    const addresses = response.data.data.map(address => {
+      return this.buildWalletAddress(address, address.index);
     });
     this.addresses = addresses;
     return addresses;
@@ -440,6 +446,23 @@ export class Wallet {
     options: { [key: string]: string } = {},
   ): Promise<Decimal> {
     return (await this.getDefaultAddress()).unstakeableBalance(asset_id, mode, options);
+  }
+
+  /**
+   * Get the pending claimable balance for the supplied asset.
+   *
+   * @param asset_id - The asset to check pending claimable balance for.
+   * @param mode - The staking mode. Defaults to DEFAULT.
+   * @param options - Additional options for getting the pending claimable balance.
+   * @throws {Error} if the default address is not found.
+   * @returns The pending claimable balance.
+   */
+  public async pendingClaimableBalance(
+    asset_id: string,
+    mode: StakeOptionsMode = StakeOptionsMode.DEFAULT,
+    options: { [key: string]: string } = {},
+  ): Promise<Decimal> {
+    return (await this.getDefaultAddress()).pendingClaimableBalance(asset_id, mode, options);
   }
 
   /**
@@ -840,6 +863,7 @@ export class Wallet {
    * @param options.assetId - The ID of the Asset to send.
    * @param options.destination - The destination of the transfer. If a Wallet, sends to the Wallet's default address. If a String, interprets it as the address ID.
    * @param options.gasless - Whether the Transfer should be gasless. Defaults to false.
+   * @param options.skipBatching - When true, the Transfer will be submitted immediately. Otherwise, the Transfer will be batched. Defaults to false. Note: requires gasless option to be set to true.
    * @returns The created Transfer object.
    * @throws {APIError} if the API request to create a Transfer fails.
    * @throws {APIError} if the API request to broadcast a Transfer fails.
@@ -936,6 +960,21 @@ export class Wallet {
    */
   public async deployMultiToken(options: CreateERC1155Options): Promise<SmartContract> {
     return (await this.getDefaultAddress()).deployMultiToken(options);
+  }
+
+  /**
+   * Deploys a custom contract.
+   *
+   * @param options - The options for creating the custom contract.
+   * @param options.solidityVersion - The version of the solidity compiler, must be 0.8.+, such as "0.8.28+commit.7893614a". See https://binaries.soliditylang.org/bin/list.json
+   * @param options.solidityInputJson - The input json for the solidity compiler. See https://docs.soliditylang.org/en/latest/using-the-compiler.html#input-description for more details.
+   * @param options.contractName - The name of the contract class to be deployed.
+   * @param options.constructorArgs - The arguments for the constructor.
+   * @returns A Promise that resolves to the deployed SmartContract object.
+   * @throws {Error} If the private key is not loaded when not using server signer.
+   */
+  public async deployContract(options: CreateCustomContractOptions): Promise<SmartContract> {
+    return (await this.getDefaultAddress()).deployContract(options);
   }
 
   /**
@@ -1055,16 +1094,33 @@ export class Wallet {
   /**
    * Gets the key for encrypting seed data.
    *
+   * For EC keys (PEM format), it uses crypto.diffieHellman.
+   * For Ed25519 keys (assumed to be a base64-encoded 64-byte string), it converts the secret key
+   * to an X25519 key using ed2curve.
+   *
    * @returns The encryption key.
    */
   private getEncryptionKey(): Buffer {
-    const privateKey = crypto.createPrivateKey(Coinbase.apiKeyPrivateKey);
-    const publicKey = crypto.createPublicKey(Coinbase.apiKeyPrivateKey);
-    const encryptionKey = crypto.diffieHellman({
-      privateKey,
-      publicKey,
-    });
-    return encryptionKey;
+    const apiKeyPrivateKey = Coinbase.apiKeyPrivateKey;
+    if (apiKeyPrivateKey.startsWith("-----BEGIN")) {
+      // Assume EC key in PEM format.
+      const privateKey = crypto.createPrivateKey(apiKeyPrivateKey);
+      const publicKey = crypto.createPublicKey(apiKeyPrivateKey);
+      return crypto.diffieHellman({ privateKey, publicKey });
+    } else {
+      // Assume Ed25519 key: a base64-encoded 64-byte string (first 32 bytes = seed, next 32 = public key)
+      const decoded = Buffer.from(apiKeyPrivateKey, "base64");
+      if (decoded.length !== 64) {
+        throw new Error("Invalid Ed25519 key format");
+      }
+      const seed = decoded.slice(0, 32);
+      // Convert the Ed25519 seed to an X25519 key using ed2curve.
+      const x25519 = ed2curve.convertSecretKey(new Uint8Array(seed));
+      if (!x25519) {
+        throw new Error("Failed to convert Ed25519 key to X25519");
+      }
+      return Buffer.from(x25519);
+    }
   }
 
   /**

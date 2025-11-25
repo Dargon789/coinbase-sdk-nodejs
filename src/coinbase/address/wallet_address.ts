@@ -10,22 +10,23 @@ import { Transfer } from "../transfer";
 import { ContractInvocation } from "../contract_invocation";
 import {
   Amount,
-  CreateTransferOptions,
-  CreateTradeOptions,
   CreateContractInvocationOptions,
-  Destination,
-  StakeOptionsMode,
+  CreateCustomContractOptions,
+  CreateERC1155Options,
   CreateERC20Options,
   CreateERC721Options,
-  CreateERC1155Options,
-  PaginationOptions,
-  PaginationResponse,
   CreateFundOptions,
   CreateQuoteOptions,
+  CreateTradeOptions,
+  CreateTransferOptions,
+  Destination,
+  PaginationOptions,
+  PaginationResponse,
+  StakeOptionsMode,
 } from "../types";
 import { delay } from "../utils";
 import { Wallet as WalletClass } from "../wallet";
-import { StakingOperation } from "../staking_operation";
+import { IsDedicatedEthUnstakeV2Operation, StakingOperation } from "../staking_operation";
 import { PayloadSignature } from "../payload_signature";
 import { SmartContract } from "../smart_contract";
 import { FundOperation } from "../fund_operation";
@@ -203,6 +204,7 @@ export class WalletAddress extends Address {
    * @param options.assetId - The ID of the Asset to send. For Ether, Coinbase.assets.Eth, Coinbase.assets.Gwei, and Coinbase.assets.Wei supported.
    * @param options.destination - The destination of the transfer. If a Wallet, sends to the Wallet's default address. If a String, interprets it as the address ID.
    * @param options.gasless - Whether the Transfer should be gasless. Defaults to false.
+   * @param options.skipBatching - When true, the Transfer will be submitted immediately. Otherwise, the Transfer will be batched. Defaults to false. Note: requires gasless option to be set to true.
    * @returns The transfer object.
    * @throws {APIError} if the API request to create a Transfer fails.
    * @throws {APIError} if the API request to broadcast a Transfer fails.
@@ -212,6 +214,7 @@ export class WalletAddress extends Address {
     assetId,
     destination,
     gasless = false,
+    skipBatching = false,
   }: CreateTransferOptions): Promise<Transfer> {
     if (!Coinbase.useServerSigner && !this.key) {
       throw new Error("Cannot transfer from address without private key loaded");
@@ -228,12 +231,17 @@ export class WalletAddress extends Address {
       );
     }
 
+    if (skipBatching && !gasless) {
+      throw new ArgumentError("skipBatching requires gasless to be true");
+    }
+
     const createTransferRequest = {
       amount: asset.toAtomicAmount(normalizedAmount).toString(),
       network_id: destinationNetworkId,
       asset_id: asset.primaryDenomination(),
       destination: destinationAddress,
       gasless: gasless,
+      skip_batching: skipBatching,
     };
 
     const response = await Coinbase.apiClients.transfer!.createTransfer(
@@ -373,7 +381,11 @@ export class WalletAddress extends Address {
    * @returns A Promise that resolves to the deployed SmartContract object.
    * @throws {APIError} If the API request to create a smart contract fails.
    */
-  public async deployToken({ name, symbol, totalSupply }: CreateERC20Options): Promise<SmartContract> {
+  public async deployToken({
+    name,
+    symbol,
+    totalSupply,
+  }: CreateERC20Options): Promise<SmartContract> {
     if (!Coinbase.useServerSigner && !this.key) {
       throw new Error("Cannot deploy ERC20 without private key loaded");
     }
@@ -443,6 +455,44 @@ export class WalletAddress extends Address {
   }
 
   /**
+   * Deploys a custom contract.
+   *
+   * @param options - The options for creating the custom contract.
+   * @param options.solidityVersion - The version of the solidity compiler, must be 0.8.+, such as "0.8.28+commit.7893614a". See https://binaries.soliditylang.org/bin/list.json
+   * @param options.solidityInputJson - The input json for the solidity compiler. See https://docs.soliditylang.org/en/latest/using-the-compiler.html#input-description for more details.
+   * @param options.contractName - The name of the contract class to be deployed.
+   * @param options.constructorArgs - The arguments for the constructor.
+   * @returns A Promise that resolves to the deployed SmartContract object.
+   * @throws {APIError} If the API request to create a smart contract fails.
+   */
+  public async deployContract({
+    solidityVersion,
+    solidityInputJson,
+    contractName,
+    constructorArgs,
+  }: CreateCustomContractOptions): Promise<SmartContract> {
+    if (!Coinbase.useServerSigner && !this.key) {
+      throw new Error("Cannot deploy custom contract without private key loaded");
+    }
+
+    const smartContract = await this.createCustomContract({
+      solidityVersion,
+      solidityInputJson,
+      contractName,
+      constructorArgs,
+    });
+
+    if (Coinbase.useServerSigner) {
+      return smartContract;
+    }
+
+    await smartContract.sign(this.getSigner());
+    await smartContract.broadcast();
+
+    return smartContract;
+  }
+
+  /**
    * Creates an ERC20 token contract.
    *
    * @private
@@ -453,7 +503,11 @@ export class WalletAddress extends Address {
    * @returns {Promise<SmartContract>} A Promise that resolves to the created SmartContract.
    * @throws {APIError} If the API request to create a smart contract fails.
    */
-  private async createERC20({ name, symbol, totalSupply }: CreateERC20Options): Promise<SmartContract> {
+  private async createERC20({
+    name,
+    symbol,
+    totalSupply,
+  }: CreateERC20Options): Promise<SmartContract> {
     const resp = await Coinbase.apiClients.smartContract!.createSmartContract(
       this.getWalletId(),
       this.getId(),
@@ -479,7 +533,11 @@ export class WalletAddress extends Address {
    * @returns A Promise that resolves to the deployed SmartContract object.
    * @throws {APIError} If the private key is not loaded when not using server signer.
    */
-  private async createERC721({ name, symbol, baseURI }: CreateERC721Options): Promise<SmartContract> {
+  private async createERC721({
+    name,
+    symbol,
+    baseURI,
+  }: CreateERC721Options): Promise<SmartContract> {
     const resp = await Coinbase.apiClients.smartContract!.createSmartContract(
       this.getWalletId(),
       this.getId(),
@@ -516,6 +574,45 @@ export class WalletAddress extends Address {
       },
     );
     return SmartContract.fromModel(resp?.data);
+  }
+
+  /**
+   * Creates a custom contract.
+   *
+   * @private
+   * @param {CreateCustomContractOptions} options - The options for creating the custom contract.
+   * @param {string} options.solidityVersion - The version of the solidity compiler, must be 0.8.+, such as "0.8.28+commit.7893614a". See https://binaries.soliditylang.org/bin/list.json
+   * @param {string} options.solidityInputJson - The input json for the solidity compiler. See https://docs.soliditylang.org/en/latest/using-the-compiler.html#input-description for more details.
+   * @param {string} options.contractName - The name of the contract class.
+   * @param {Record<string, any>} options.constructorArgs - The arguments for the constructor.
+   * @returns {Promise<SmartContract>} A Promise that resolves to the created SmartContract.
+   * @throws {APIError} If the API request to compile or subsequently create a smart contract fails.
+   */
+  private async createCustomContract({
+    solidityVersion,
+    solidityInputJson,
+    contractName,
+    constructorArgs,
+  }: CreateCustomContractOptions): Promise<SmartContract> {
+    const compileContractResp = await Coinbase.apiClients.smartContract!.compileSmartContract({
+      solidity_compiler_version: solidityVersion,
+      solidity_input_json: solidityInputJson,
+      contract_name: contractName,
+    });
+
+    const compiledContract = compileContractResp.data;
+    const compiledContractId = compiledContract.compiled_smart_contract_id;
+
+    const createContractResp = await Coinbase.apiClients.smartContract!.createSmartContract(
+      this.getWalletId(),
+      this.getId(),
+      {
+        type: SmartContractType.Custom,
+        options: JSON.stringify(constructorArgs),
+        compiled_smart_contract_id: compiledContractId,
+      },
+    );
+    return SmartContract.fromModel(createContractResp?.data);
   }
 
   /**
@@ -619,7 +716,10 @@ export class WalletAddress extends Address {
     timeoutSeconds = 600,
     intervalSeconds = 0.2,
   ): Promise<StakingOperation> {
-    await this.validateCanUnstake(amount, assetId, mode, options);
+    // If performing a native ETH unstake, validation is always performed server-side.
+    if (!IsDedicatedEthUnstakeV2Operation(assetId, "unstake", mode, options)) {
+      await this.validateCanUnstake(amount, assetId, mode, options);
+    }
     return this.createStakingOperation(
       amount,
       assetId,
@@ -660,6 +760,32 @@ export class WalletAddress extends Address {
       assetId,
       "claim_stake",
       mode,
+      options,
+      timeoutSeconds,
+      intervalSeconds,
+    );
+  }
+
+  /**
+   * Creates a staking operation to consolidate.
+   *
+   * @param options - Additional options for the consolidation operation.
+   *
+   * @param timeoutSeconds - The amount to wait for the transaction to complete when broadcasted.
+   * @param intervalSeconds - The amount to check each time for a successful broadcast.
+   *
+   * @returns The staking operation after it's completed successfully.
+   */
+  public async createValidatorConsolidation(
+    options: { [key: string]: string } = {},
+    timeoutSeconds = 600,
+    intervalSeconds = 0.2,
+  ): Promise<StakingOperation> {
+    return this.createStakingOperation(
+      0,
+      "eth",
+      "consolidate",
+      StakeOptionsMode.NATIVE,
       options,
       timeoutSeconds,
       intervalSeconds,
@@ -770,10 +896,7 @@ export class WalletAddress extends Address {
    * @param options.assetId - The ID of the Asset to fund with. For Ether, eth, gwei, and wei are supported.
    * @returns The created fund operation object
    */
-  public async fund({
-    amount,
-    assetId,
-  }: CreateFundOptions): Promise<FundOperation> {
+  public async fund({ amount, assetId }: CreateFundOptions): Promise<FundOperation> {
     const normalizedAmount = new Decimal(amount.toString());
 
     return FundOperation.create(
@@ -793,10 +916,7 @@ export class WalletAddress extends Address {
    * @param options.assetId - The ID of the Asset to fund with. For Ether, eth, gwei, and wei are supported.
    * @returns The fund quote object
    */
-  public async quoteFund({
-    amount,
-    assetId,
-  }: CreateQuoteOptions): Promise<FundQuote> {
+  public async quoteFund({ amount, assetId }: CreateQuoteOptions): Promise<FundQuote> {
     const normalizedAmount = new Decimal(amount.toString());
 
     return FundQuote.create(
@@ -917,10 +1037,6 @@ export class WalletAddress extends Address {
     timeoutSeconds: number,
     intervalSeconds: number,
   ): Promise<StakingOperation> {
-    if (new Decimal(amount.toString()).lessThanOrEqualTo(0)) {
-      throw new Error("Amount required greater than zero.");
-    }
-
     let stakingOperation = await this.createStakingOperationRequest(
       amount,
       assetId,
@@ -981,8 +1097,9 @@ export class WalletAddress extends Address {
   ): Promise<StakingOperation> {
     const asset = await Asset.fetch(this.getNetworkId(), assetId);
 
-    options.amount = asset.toAtomicAmount(new Decimal(amount.toString())).toString();
     options.mode = mode ? mode : StakeOptionsMode.DEFAULT;
+
+    options.amount = asset.toAtomicAmount(new Decimal(amount.toString())).toString();
 
     const stakingOperationRequest = {
       network_id: this.getNetworkId(),

@@ -1,9 +1,9 @@
 import { Address } from "../address";
-import { Amount, StakeOptionsMode } from "../types";
+import { Amount, BroadcastExternalTransactionResponse, StakeOptionsMode } from "../types";
 import { Coinbase } from "../coinbase";
 import Decimal from "decimal.js";
 import { Asset } from "../asset";
-import { StakingOperation } from "../staking_operation";
+import { IsDedicatedEthUnstakeV2Operation, StakingOperation } from "../staking_operation";
 
 /**
  * A representation of a blockchain Address, which is a user-controlled account on a Network. Addresses are used to
@@ -63,7 +63,11 @@ export class ExternalAddress extends Address {
     mode: StakeOptionsMode = StakeOptionsMode.DEFAULT,
     options: { [key: string]: string } = {},
   ): Promise<StakingOperation> {
-    await this.validateCanUnstake(amount, assetId, mode, options);
+    // If performing a native eth unstake v2, validation is always performed server-side.
+    if (!IsDedicatedEthUnstakeV2Operation(assetId, "unstake", mode, options)) {
+      await this.validateCanUnstake(amount, assetId, mode, options);
+    }
+
     return this.buildStakingOperation(amount, assetId, "unstake", mode, options);
   }
 
@@ -91,6 +95,19 @@ export class ExternalAddress extends Address {
   }
 
   /**
+   * Builds a validator consolidation operation to help consolidate validators post Pectra.
+   *
+   * @param options - Additional options for the validator consolidation operation.
+   *
+   * @returns The validator consolidation operation.
+   */
+  public async buildValidatorConsolidationOperation(
+    options: { [key: string]: string } = {},
+  ): Promise<StakingOperation> {
+    return this.buildStakingOperation(0, "eth", "consolidate", StakeOptionsMode.NATIVE, options);
+  }
+
+  /**
    * Builds the staking operation based on the supplied input.
    *
    * @param amount - The amount for the staking operation.
@@ -109,15 +126,12 @@ export class ExternalAddress extends Address {
     mode: StakeOptionsMode,
     options: { [key: string]: string },
   ): Promise<StakingOperation> {
-    const stakingAmount = new Decimal(amount.toString());
-    if (stakingAmount.lessThanOrEqualTo(0)) {
-      throw new Error(`Amount required greater than zero.`);
-    }
     const asset = await Asset.fetch(this.getNetworkId(), assetId);
 
     const newOptions = this.copyOptions(options);
 
     newOptions.mode = mode;
+
     newOptions.amount = asset.toAtomicAmount(new Decimal(amount.toString())).toString();
 
     const request = {
@@ -131,5 +145,28 @@ export class ExternalAddress extends Address {
     const response = await Coinbase.apiClients.stake!.buildStakingOperation(request);
 
     return new StakingOperation(response!.data);
+  }
+
+  /**
+   * Broadcast an external transaction
+   *
+   * @param signedPayload - The signed payload of the transaction to broadcast
+   * @returns The broadcasted transaction
+   */
+  public async broadcastExternalTransaction(
+    signedPayload: string,
+  ): Promise<BroadcastExternalTransactionResponse> {
+    const response = await Coinbase.apiClients.externalAddress!.broadcastExternalTransaction(
+      this.getNetworkId(),
+      this.getId(),
+      {
+        signed_payload: signedPayload,
+      },
+    );
+
+    return {
+      transactionHash: response.data.transaction_hash,
+      transactionLink: response.data.transaction_link,
+    };
   }
 }

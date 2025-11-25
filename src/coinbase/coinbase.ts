@@ -20,11 +20,16 @@ import {
   MPCWalletStakeApiFactory,
   FundApiFactory,
   ReputationApiFactory,
+  SmartWalletsApiFactory,
 } from "../client";
 import { BASE_PATH } from "./../client/base";
 import { Configuration } from "./../client/configuration";
 import { CoinbaseAuthenticator } from "./authenticator";
-import { InvalidAPIKeyFormatError, InvalidConfigurationError } from "./errors";
+import {
+  InvalidAPIKeyFormatError,
+  InvalidConfigurationError,
+  UninitializedSDKError,
+} from "./errors";
 import { ApiClients, CoinbaseConfigureFromJsonOptions, CoinbaseOptions } from "./types";
 import { logApiResponse, registerAxiosInterceptors } from "./utils";
 import * as os from "os";
@@ -58,9 +63,18 @@ export class Coinbase {
     Weth: "weth",
     Sol: "sol",
     Lamport: "lamport",
+    Eurc: "eurc",
+    Cbbtc: "cbbtc",
   };
 
-  static apiClients: ApiClients = {};
+  static apiClients: ApiClients = new Proxy({} as ApiClients, {
+    get(target, prop) {
+      if (!Reflect.has(target, prop)) {
+        throw new UninitializedSDKError();
+      }
+      return Reflect.get(target, prop);
+    },
+  });
 
   /**
    * The CDP API key Private Key.
@@ -144,6 +158,7 @@ export class Coinbase {
     );
 
     Coinbase.apiClients.wallet = WalletsApiFactory(config, basePath, axiosInstance);
+    Coinbase.apiClients.smartWallet = SmartWalletsApiFactory(config, basePath, axiosInstance);
     Coinbase.apiClients.address = AddressesApiFactory(config, basePath, axiosInstance);
     Coinbase.apiClients.transfer = TransfersApiFactory(config, basePath, axiosInstance);
     Coinbase.apiClients.trade = TradesApiFactory(config, basePath, axiosInstance);
@@ -239,13 +254,17 @@ export class Coinbase {
     }
     try {
       const data = fs.readFileSync(filePath, "utf8");
-      const config = JSON.parse(data) as { name: string; privateKey: string };
-      if (!config.name || !config.privateKey) {
-        throw new InvalidAPIKeyFormatError("Invalid configuration: missing configuration values");
+      // Support both "name" and "id" for the API key identifier.
+      const config = JSON.parse(data) as { name?: string; id?: string; privateKey: string };
+      const apiKeyIdentifier = config.name || config.id;
+      if (!apiKeyIdentifier || !config.privateKey) {
+        throw new InvalidAPIKeyFormatError(
+          "Invalid configuration: missing API key identifier or privateKey",
+        );
       }
 
       return new Coinbase({
-        apiKeyName: config.name,
+        apiKeyName: apiKeyIdentifier,
         privateKey: config.privateKey,
         useServerSigner: useServerSigner,
         debugging: debugging,

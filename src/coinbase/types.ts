@@ -12,6 +12,7 @@ import {
   CreateTransferRequest,
   TransferList,
   Wallet as WalletModel,
+  SmartWallet as SmartWalletModel,
   Transfer as TransferModel,
   Trade as TradeModel,
   Asset as AssetModel,
@@ -64,6 +65,14 @@ import {
   AddressReputation,
   RegisterSmartContractRequest,
   UpdateSmartContractRequest,
+  CompileSmartContractRequest,
+  CompiledSmartContract,
+  BroadcastExternalTransactionRequest,
+  BroadcastExternalTransaction200Response,
+  CreateSmartWalletRequest,
+  CreateUserOperationRequest,
+  UserOperation as UserOperationModel,
+  BroadcastUserOperationRequest,
 } from "./../client/api";
 import { Address } from "./address";
 import { Wallet } from "./wallet";
@@ -241,6 +250,77 @@ export type WalletAPIClient = {
 };
 
 /**
+ * SmartWalletAPI client type definition.
+ */
+export type SmartWalletAPIClient = {
+  /**
+   * Create a new smart wallet scoped to the user.
+   *
+   * @class
+   * @param createdSmartWalletRequest - The smart wallet creation request.
+   * @param options - Axios request options.
+   * @throws {APIError} If the request fails.
+   */
+  createSmartWallet: (
+    createSmartWalletRequest?: CreateSmartWalletRequest,
+    options?: RawAxiosRequestConfig,
+  ) => AxiosPromise<SmartWalletModel>;
+
+  /*
+   *Get the smart wallet by address
+   *
+   *@param smartWalletAddress - The address of the smart wallet to fetch.
+   *@param options - Override http request option.
+   *@throws {APIError} If the request fails.
+   */
+  getSmartWallet: (
+    smartWalletAddress: string,
+    options?: RawAxiosRequestConfig,
+  ) => AxiosPromise<SmartWalletModel>;
+
+  /*
+   *Create a user operation
+   *
+   *@param createUserOperationRequest - The user operation creation request.
+   *@param options - Override http request option.
+   *@throws {APIError} If the request fails.
+   */
+  createUserOperation: (
+    smartWalletAddress: string,
+    networkId: string,
+    createUserOperationRequest: CreateUserOperationRequest,
+    options?: RawAxiosRequestConfig,
+  ) => AxiosPromise<UserOperationModel>;
+
+  /*
+   *Broadcast a user operation
+   *
+   *@param broadcastUserOperationRequest - The user operation broadcast request.
+   *@param options - Override http request option.
+   *@throws {APIError} If the request fails.
+   */
+  broadcastUserOperation: (
+    smartWalletAddress: string,
+    userOperationId: string,
+    broadcastUserOperationRequest: BroadcastUserOperationRequest,
+    options?: RawAxiosRequestConfig,
+  ) => AxiosPromise<UserOperationModel>;
+
+  /*
+   *Get a user operation by ID
+   *
+   *@param userOperationId - The ID of the user operation to fetch.
+   *@param options - Override http request option.
+   *@throws {APIError} If the request fails.
+   */
+  getUserOperation: (
+    smartWalletAddress: string,
+    userOpHash: string,
+    options?: RawAxiosRequestConfig,
+  ) => AxiosPromise<UserOperationModel>;
+};
+
+/**
  * AddressAPI client type definition.
  */
 export type AddressAPIClient = {
@@ -327,13 +407,13 @@ export type AddressAPIClient = {
    *
    * @param walletId - The ID of the wallet the address belongs to.
    * @param addressId - The onchain address of the address to sign the payload with.
-   * @param CreatePayloadSignatureRequest - The payload signature creation request.
+   * @param createPayloadSignatureRequest - The payload signature creation request.
    * @param options - Axios request options.
    * @throws {APIError} If the request fails.
    */
   createPayloadSignature(
     walletId: string,
-    addressid: string,
+    addressId: string,
     createPayloadSignatureRequest?: CreatePayloadSignatureRequest,
     options?: AxiosRequestConfig,
   ): AxiosPromise<PayloadSignatureModel>;
@@ -349,7 +429,7 @@ export type AddressAPIClient = {
    */
   getPayloadSignature(
     walletId: string,
-    addressid: string,
+    addressId: string,
     payloadSignatureId: string,
     options?: AxiosRequestConfig,
   ): AxiosPromise<PayloadSignatureModel>;
@@ -366,7 +446,7 @@ export type AddressAPIClient = {
    */
   listPayloadSignatures(
     walletId: string,
-    addressid: string,
+    addressId: string,
     limit?: number,
     page?: string,
     options?: AxiosRequestConfig,
@@ -443,6 +523,22 @@ export type ExternalAddressAPIClient = {
     transactionHash: string,
     options?: RawAxiosRequestConfig,
   ): AxiosPromise<FaucetTransaction>;
+
+  /**
+   * Broadcast an external transaction
+   *
+   * @param networkId - The ID of the blockchain network
+   * @param addressId - The ID of the address to broadcast the transaction for
+   * @param broadcastExternalTransactionRequest - The request body
+   * @param options - Override http request option.
+   * @throws {APIError} If the request fails.
+   */
+  broadcastExternalTransaction(
+    networkId: string,
+    addressId: string,
+    broadcastExternalTransactionRequest: BroadcastExternalTransactionRequest,
+    options?: RawAxiosRequestConfig,
+  ): AxiosPromise<BroadcastExternalTransaction200Response>;
 };
 
 export type WalletStakeAPIClient = {
@@ -731,6 +827,7 @@ export type ApiClients = {
   smartContract?: SmartContractAPIClient;
   fund?: FundOperationApiClient;
   addressReputation?: AddressReputationApiClient;
+  smartWallet?: SmartWalletAPIClient;
 };
 
 /**
@@ -1075,7 +1172,8 @@ export type MultiTokenContractOptions = {
 export type SmartContractOptions =
   | NFTContractOptions
   | TokenContractOptions
-  | MultiTokenContractOptions;
+  | MultiTokenContractOptions
+  | string;
 
 /**
  * Options for creating a Transfer.
@@ -1085,6 +1183,7 @@ export type CreateTransferOptions = {
   assetId: string;
   destination: Destination;
   gasless?: boolean;
+  skipBatching?: boolean;
 };
 
 /**
@@ -1131,6 +1230,21 @@ export type CreateERC721Options = {
  */
 export type CreateERC1155Options = {
   uri: string;
+};
+
+/**
+ * Options for creating an arbitrary contract.
+ */
+export type CreateCustomContractOptions = {
+  /** The version of the solidity compiler, must be 0.8.+, such as "0.8.28+commit.7893614a". See https://binaries.soliditylang.org/bin/list.json */
+  solidityVersion: string;
+  /** The input json for the solidity compiler. See https://docs.soliditylang.org/en/latest/using-the-compiler.html#input-description for more details. */
+  solidityInputJson: string;
+  /** The name of the contract class to be deployed. */
+  contractName: string;
+  /** The arguments for the constructor. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructorArgs: Record<string, any>;
 };
 
 /**
@@ -1468,6 +1582,19 @@ export interface SmartContractAPIClient {
   ): AxiosPromise<SmartContractList>;
 
   /**
+   * Compiles a custom contract.
+   *
+   * @param compileSmartContractRequest - The request body containing the compile smart contract details.
+   * @param options - Axios request options.
+   * @returns - A promise resolving to the compiled smart contract.
+   * @throws {APIError} If the request fails.
+   */
+  compileSmartContract(
+    compileSmartContractRequest: CompileSmartContractRequest,
+    options?: RawAxiosRequestConfig,
+  ): AxiosPromise<CompiledSmartContract>;
+
+  /**
    * Creates a new Smart Contract.
    *
    * @param walletId - The ID of the wallet the address belongs to.
@@ -1668,4 +1795,12 @@ export interface PaginationResponse<T> {
   data: T[];
   hasMore: boolean;
   nextPage: string | undefined;
+}
+
+/**
+ * Response from broadcasting an external transaction
+ */
+export interface BroadcastExternalTransactionResponse {
+  transactionHash: string;
+  transactionLink?: string;
 }

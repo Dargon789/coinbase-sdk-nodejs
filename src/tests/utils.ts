@@ -13,6 +13,7 @@ import {
   FaucetTransaction as FaucetTransactionModel,
   StakingOperation as StakingOperationModel,
   PayloadSignature as PayloadSignatureModel,
+  CompiledSmartContract as CompiledSmartContractModel,
   PayloadSignatureList,
   PayloadSignatureStatusEnum,
   ContractInvocation as ContractInvocationModel,
@@ -37,6 +38,7 @@ import { Coinbase } from "../coinbase/coinbase";
 import { convertStringToHex, registerAxiosInterceptors } from "../coinbase/utils";
 import { HDKey } from "@scure/bip32";
 import { Asset } from "../coinbase/asset";
+import { Wallet } from "../coinbase/wallet";
 
 export const mockFn = (...args) => jest.fn(...args) as any;
 export const mockReturnValue = data => jest.fn().mockResolvedValue({ data });
@@ -55,6 +57,7 @@ export const mockListAddress = (seed: string, count = 1) => {
       network_id: Coinbase.networks.BaseSepolia,
       public_key: wallet1PrivateKey,
       wallet_id: randomUUID(),
+      index: i,
     };
   });
 
@@ -113,6 +116,36 @@ export const newAddressModel = (
     wallet_id: walletId,
     index,
   };
+};
+
+export const newAddressModelsFromWallet = async (
+  walletId: string,
+  seed: string,
+  network_id: string = Coinbase.networks.BaseSepolia,
+): Promise<AddressModel[]> => {
+  // create a new wallet with master seed
+  const wallet = HDKey.fromMasterSeed(Buffer.from(seed, "hex"));
+  const address1 = getAddressFromHDKey(wallet.derive("m/44'/60'/0'/0/0"));
+  const address2 = getAddressFromHDKey(wallet.derive("m/44'/60'/0'/0/1"));
+  const publicKey1 = convertStringToHex(wallet.derive("m/44'/60'/0'/0/0").publicKey!);
+  const publicKey2 = convertStringToHex(wallet.derive("m/44'/60'/0'/0/1").publicKey!);
+
+  return [
+    {
+      address_id: address1,
+      network_id: network_id,
+      public_key: publicKey1,
+      wallet_id: walletId,
+      index: 0,
+    },
+    {
+      address_id: address2,
+      network_id: network_id,
+      public_key: publicKey2,
+      wallet_id: walletId,
+      index: 1,
+    },
+  ];
 };
 
 export const VALID_ADDRESS_MODEL = newAddressModel(randomUUID());
@@ -192,12 +225,12 @@ export const VALID_TRANSFER_SPONSORED_SEND_MODEL: TransferModel = {
 
 export const VALID_STAKING_OPERATION_MODEL: StakingOperationModel = {
   id: "some-id",
-  network_id: Coinbase.networks.EthereumHolesky,
+  network_id: Coinbase.networks.EthereumHoodi,
   address_id: "some-address-id",
   status: StakingOperationStatusEnum.Initialized,
   transactions: [
     {
-      network_id: Coinbase.networks.EthereumHolesky,
+      network_id: Coinbase.networks.EthereumHoodi,
       from_address_id: "dummy-from-address-id",
       to_address_id: "dummy-to-address-id",
       unsigned_payload:
@@ -390,6 +423,32 @@ export const VALID_SMART_CONTRACT_ERC1155_MODEL: SmartContractModel = {
   },
 };
 
+export const VALID_COMPILED_CONTRACT_MODEL: CompiledSmartContractModel = {
+  compiled_smart_contract_id: "test-compiled-contract-1",
+  solidity_input_json: "{}",
+  contract_creation_bytecode: "0x",
+  abi: JSON.stringify("some-abi"),
+  contract_name: "TestContract",
+};
+
+export const VALID_SMART_CONTRACT_CUSTOM_MODEL: SmartContractModel = {
+  smart_contract_id: "test-smart-contract-custom",
+  network_id: Coinbase.networks.BaseSepolia,
+  wallet_id: walletId,
+  contract_name: "TestContract",
+  is_external: false,
+  contract_address: "0xcontract-address",
+  type: SmartContractType.Custom,
+  abi: JSON.stringify("some-abi"),
+  transaction: {
+    network_id: Coinbase.networks.BaseSepolia,
+    from_address_id: "0xdeadbeef",
+    unsigned_payload:
+      "7b2274797065223a22307832222c22636861696e4964223a2230783134613334222c226e6f6e6365223a22307830222c22746f223a22307861383261623835303466646562326461646161336234663037356539363762626533353036356239222c22676173223a22307865623338222c226761735072696365223a6e756c6c2c226d61785072696f72697479466565506572476173223a2230786634323430222c226d6178466565506572476173223a2230786634333638222c2276616c7565223a22307830222c22696e707574223a223078366136323738343230303030303030303030303030303030303030303030303034373564343164653761383132393862613236333138343939363830306362636161643733633062222c226163636573734c697374223a5b5d2c2276223a22307830222c2272223a22307830222c2273223a22307830222c2279506172697479223a22307830222c2268617368223a22307865333131636632303063643237326639313566656433323165663065376431653965353362393761346166623737336638653935646431343630653665326163227d",
+    status: TransactionStatusEnum.Pending,
+  },
+};
+
 export const VALID_SMART_CONTRACT_EXTERNAL_MODEL: SmartContractModel = {
   smart_contract_id: "test-smart-contract-external",
   network_id: Coinbase.networks.BaseSepolia,
@@ -399,7 +458,6 @@ export const VALID_SMART_CONTRACT_EXTERNAL_MODEL: SmartContractModel = {
   type: SmartContractType.Custom,
   abi: JSON.stringify("some-abi"),
 };
-
 
 const asset = Asset.fromModel({
   asset_id: Coinbase.assets.Eth,
@@ -501,12 +559,12 @@ export const VALID_FUND_OPERATION_MODEL: FundOperationModel = {
 export function mockStakingOperation(status: StakingOperationStatusEnum): StakingOperationModel {
   return {
     id: "some-id",
-    network_id: Coinbase.networks.EthereumHolesky,
+    network_id: Coinbase.networks.EthereumHoodi,
     address_id: "some-address-id",
     status: status,
     transactions: [
       {
-        network_id: Coinbase.networks.EthereumHolesky,
+        network_id: Coinbase.networks.EthereumHoodi,
         from_address_id: "0xdeadbeef",
         unsigned_payload:
           "7b2274797065223a22307832222c22636861696e4964223a2230783134613334222c226e6f6e63" +
@@ -594,13 +652,16 @@ export function mockEthereumValidator(
 ): Validator {
   return {
     validator_id: public_key,
-    network_id: "ethereum-holesky",
+    network_id: "ethereum-hoodi",
     asset_id: "eth",
     status: status,
     details: {
       index: index,
       public_key: public_key,
       withdrawal_address: "0xwithdrawal_address_1",
+      withdrawal_credentials: "0x01withdrawal_credentials_1",
+      fee_recipient_address: "0xfee_recipient_address_1",
+      forwarded_fee_recipient_address: "0xforwarded_fee_recipient_address_1",
       slashed: false,
       activationEpoch: "10",
       exitEpoch: "10",
@@ -609,14 +670,14 @@ export function mockEthereumValidator(
         amount: "32000000000000000000",
         asset: {
           asset_id: Coinbase.assets.Eth,
-          network_id: Coinbase.networks.EthereumHolesky,
+          network_id: Coinbase.networks.EthereumHoodi,
         },
       },
       effective_balance: {
         amount: "32000000000000000000",
         asset: {
           asset_id: Coinbase.assets.Eth,
-          network_id: Coinbase.networks.EthereumHolesky,
+          network_id: Coinbase.networks.EthereumHoodi,
         },
       },
     },
@@ -767,6 +828,7 @@ export const externalAddressApiMock = {
   requestExternalFaucetFunds: jest.fn(),
   listAddressTransactions: jest.fn(),
   getFaucetTransaction: jest.fn(),
+  broadcastExternalTransaction: jest.fn(),
 };
 
 export const balanceHistoryApiMock = {
@@ -786,6 +848,7 @@ export const contractEventApiMock = {
 };
 
 export const smartContractApiMock = {
+  compileSmartContract: jest.fn(),
   createSmartContract: jest.fn(),
   deploySmartContract: jest.fn(),
   getSmartContract: jest.fn(),
@@ -815,6 +878,14 @@ export const fundOperationsApiMock = {
 
 export const reputationApiMock = {
   getAddressReputation: jest.fn(),
+};
+
+export const smartWalletApiMock = {
+  createSmartWallet: jest.fn(),
+  getSmartWallet: jest.fn(),
+  createUserOperation: jest.fn(),
+  broadcastUserOperation: jest.fn(),
+  getUserOperation: jest.fn(),
 };
 
 export const testAllReadTypesABI = [

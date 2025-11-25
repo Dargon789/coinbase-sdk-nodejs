@@ -6,6 +6,48 @@ import {
 import { Transaction } from "./transaction";
 import { Coinbase } from "./coinbase";
 import { delay } from "./utils";
+import { Amount, StakeOptionsMode } from "./types";
+import { Asset } from "./asset";
+import Decimal from "decimal.js";
+
+export const UnstakeTypeExecution = "execution";
+export const UnstakeTypeConsensus = "consensus";
+
+/**
+ * Checks if the given options contains the unstake type option.
+ *
+ * @param options - An object containing various options.
+ * @returns True if the unstake type is consensus or execution, false otherwise.
+ */
+export function HasUnstakeTypeOption(options: { [key: string]: string }): boolean {
+  return (
+    options["unstake_type"] === UnstakeTypeConsensus ||
+    options["unstake_type"] === UnstakeTypeExecution
+  );
+}
+
+/**
+ * Determines if the given parameters represent a native ETH unstake operation (version 2).
+ *
+ * @param assetId - The ID of the asset.
+ * @param action - The action being performed.
+ * @param mode - The mode of the stake options.
+ * @param options - An object containing various options.
+ * @returns True if the parameters represent a native ETH unstake operation (version 2), false otherwise.
+ */
+export function IsDedicatedEthUnstakeV2Operation(
+  assetId: string,
+  action: string,
+  mode: string,
+  options: { [key: string]: string },
+): boolean {
+  return (
+    assetId === Coinbase.assets.Eth &&
+    action == "unstake" &&
+    mode === StakeOptionsMode.NATIVE &&
+    HasUnstakeTypeOption(options)
+  );
+}
 
 /**
  * A representation of a staking operation (stake, unstake, claim stake, etc.). It
@@ -279,5 +321,89 @@ export class StakingOperation {
         }
       });
     }
+  }
+}
+
+/**
+ * A builder class for creating execution layer withdrawal options.
+ */
+export class ExecutionLayerWithdrawalOptionsBuilder {
+  private readonly networkId: string;
+  private validatorAmounts: { [key: string]: Amount } = {};
+
+  /**
+   * Creates an instance of ExecutionLayerWithdrawalOptionsBuilder.
+   *
+   * @param networkId - The network ID.
+   */
+  constructor(networkId: string) {
+    this.networkId = networkId;
+  }
+
+  /**
+   * Adds a validator withdrawal with the specified public key and amount.
+   *
+   * @param pubKey - The public key of the validator.
+   * @param amount - The amount to withdraw.
+   */
+  addValidatorWithdrawal(pubKey: string, amount: Amount) {
+    this.validatorAmounts[pubKey] = amount;
+  }
+
+  /**
+   * Builds the execution layer withdrawal options.
+   *
+   * @param options - Existing options to merge with the built options.
+   * @returns A promise that resolves to an object containing the execution layer withdrawal options merged with any provided options.
+   */
+  async build(options: { [key: string]: string } = {}): Promise<{ [key: string]: string }> {
+    const asset = await Asset.fetch(this.networkId, Coinbase.assets.Eth);
+
+    const validatorAmounts: { [key: string]: string } = {};
+
+    for (const pubKey in this.validatorAmounts) {
+      const amount = this.validatorAmounts[pubKey];
+      validatorAmounts[pubKey] = asset.toAtomicAmount(new Decimal(amount.toString())).toString();
+    }
+
+    const executionLayerWithdrawalOptions = {
+      unstake_type: UnstakeTypeExecution,
+      validator_unstake_amounts: JSON.stringify(validatorAmounts),
+    };
+
+    return Object.assign({}, options, executionLayerWithdrawalOptions);
+  }
+}
+
+/**
+ * A builder class for creating consensus layer exit options.
+ */
+export class ConsensusLayerExitOptionBuilder {
+  private validatorPubKeys: string[] = [];
+
+  /**
+   * Adds a validator public key to the list of validators.
+   *
+   * @param pubKey - The public key of the validator.
+   */
+  addValidator(pubKey: string) {
+    if (!this.validatorPubKeys.includes(pubKey)) {
+      this.validatorPubKeys.push(pubKey);
+    }
+  }
+
+  /**
+   * Builds the consensus layer exit options.
+   *
+   * @param options - Existing options to merge with the built options.
+   * @returns A promise that resolves to an object containing the consensus layer exit options merged with any provided options.
+   */
+  async build(options: { [key: string]: string } = {}): Promise<{ [key: string]: string }> {
+    const consensusLayerExitOptions = {
+      unstake_type: UnstakeTypeConsensus,
+      validator_pub_keys: this.validatorPubKeys.join(","),
+    };
+
+    return Object.assign({}, options, consensusLayerExitOptions);
   }
 }

@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as crypto from "crypto";
-import { AxiosError } from "axios";
 import { randomUUID } from "crypto";
+import { AxiosError } from "axios";
 import { ethers } from "ethers";
 import { FaucetTransaction } from "../coinbase/faucet_transaction";
 import {
   Address as AddressModel,
   Balance as BalanceModel,
-  FetchStakingRewards200Response,
   FetchHistoricalStakingBalances200Response,
+  FetchStakingRewards200Response,
+  SmartContractType,
   StakingContext as StakingContextModel,
   StakingOperation as StakingOperationModel,
   StakingOperationStatusEnum,
@@ -16,7 +17,6 @@ import {
   StakingRewardStateEnum,
   Trade as TradeModel,
   TransferList,
-  SmartContractType,
 } from "../client";
 import Decimal from "decimal.js";
 import { APIError, FaucetLimitReachedError } from "../coinbase/api_error";
@@ -25,49 +25,55 @@ import { ArgumentError } from "../coinbase/errors";
 import {
   addressesApiMock,
   assetsApiMock,
-  externalAddressApiMock,
   contractInvocationApiMock,
+  ERC1155_URI,
+  ERC20_NAME,
+  ERC20_SYMBOL,
+  ERC20_TOTAL_SUPPLY,
+  ERC721_BASE_URI,
+  ERC721_NAME,
+  ERC721_SYMBOL,
+  externalAddressApiMock,
   generateRandomHash,
   getAssetMock,
+  MINT_NFT_ABI,
+  MINT_NFT_ARGS,
   mockFn,
   mockReturnRejectedValue,
   mockReturnValue,
   newAddressModel,
+  smartContractApiMock,
   stakeApiMock,
-  walletStakeApiMock,
   tradeApiMock,
   transfersApiMock,
   VALID_ADDRESS_BALANCE_LIST,
   VALID_ADDRESS_MODEL,
+  VALID_COMPILED_CONTRACT_MODEL,
+  VALID_CONTRACT_INVOCATION_MODEL,
   VALID_FAUCET_TRANSACTION_MODEL,
+  VALID_PAYLOAD_SIGNATURE_LIST,
+  VALID_PAYLOAD_SIGNATURE_MODEL,
+  VALID_SIGNED_CONTRACT_INVOCATION_MODEL,
+  VALID_SMART_CONTRACT_CUSTOM_MODEL,
+  VALID_SMART_CONTRACT_ERC1155_MODEL,
+  VALID_SMART_CONTRACT_ERC20_MODEL,
+  VALID_SMART_CONTRACT_ERC721_MODEL,
   VALID_TRANSFER_MODEL,
   VALID_WALLET_MODEL,
-  VALID_PAYLOAD_SIGNATURE_MODEL,
-  VALID_PAYLOAD_SIGNATURE_LIST,
-  VALID_CONTRACT_INVOCATION_MODEL,
-  VALID_SIGNED_CONTRACT_INVOCATION_MODEL,
-  MINT_NFT_ABI,
-  MINT_NFT_ARGS,
   walletsApiMock,
-  VALID_SMART_CONTRACT_ERC20_MODEL,
-  smartContractApiMock,
-  ERC20_NAME,
-  ERC20_SYMBOL,
-  ERC20_TOTAL_SUPPLY,
-  VALID_SMART_CONTRACT_ERC721_MODEL,
-  ERC721_NAME,
-  ERC721_SYMBOL,
-  ERC721_BASE_URI,
-  VALID_SMART_CONTRACT_ERC1155_MODEL,
-  ERC1155_URI,
+  walletStakeApiMock,
 } from "./utils";
 import { Transfer } from "../coinbase/transfer";
-import { TransactionStatus } from "../coinbase/types";
+import { StakeOptionsMode, TransactionStatus } from "../coinbase/types";
 import { Trade } from "../coinbase/trade";
 import { Transaction } from "../coinbase/transaction";
 import { WalletAddress } from "../coinbase/address/wallet_address";
 import { Wallet } from "../coinbase/wallet";
-import { StakingOperation } from "../coinbase/staking_operation";
+import {
+  ConsensusLayerExitOptionBuilder,
+  ExecutionLayerWithdrawalOptionsBuilder,
+  StakingOperation,
+} from "../coinbase/staking_operation";
 import { StakingReward } from "../coinbase/staking_reward";
 import { StakingBalance } from "../coinbase/staking_balance";
 import { PayloadSignature } from "../coinbase/payload_signature";
@@ -338,17 +344,17 @@ describe("WalletAddress", () => {
 
   describe("#stakingOperation", () => {
     key = ethers.Wallet.createRandom();
-    const newAddress = newAddressModel("", randomUUID(), Coinbase.networks.EthereumHolesky);
+    const newAddress = newAddressModel("", randomUUID(), Coinbase.networks.EthereumHoodi);
     const walletAddress = new WalletAddress(newAddress, key as unknown as ethers.Wallet);
     const STAKING_OPERATION_MODEL: StakingOperationModel = {
       id: randomUUID(),
-      network_id: Coinbase.networks.EthereumHolesky,
+      network_id: Coinbase.networks.EthereumHoodi,
       address_id: newAddress.address_id,
       status: StakingOperationStatusEnum.Complete,
       transactions: [
         {
           from_address_id: newAddress.address_id,
-          network_id: Coinbase.networks.EthereumHolesky,
+          network_id: Coinbase.networks.EthereumHoodi,
           status: "pending",
           unsigned_payload:
             "7b2274797065223a22307832222c22636861696e4964223a22307834323638222c226e6f" +
@@ -369,10 +375,10 @@ describe("WalletAddress", () => {
     const STAKING_CONTEXT_MODEL: StakingContextModel = {
       context: {
         stakeable_balance: {
-          amount: "3000000000000000000",
+          amount: "128000000000000000000",
           asset: {
             asset_id: Coinbase.assets.Eth,
-            network_id: Coinbase.networks.EthereumHolesky,
+            network_id: Coinbase.networks.EthereumHoodi,
             decimals: 18,
             contract_address: "0x",
           },
@@ -381,7 +387,16 @@ describe("WalletAddress", () => {
           amount: "2000000000000000000",
           asset: {
             asset_id: Coinbase.assets.Eth,
-            network_id: Coinbase.networks.EthereumHolesky,
+            network_id: Coinbase.networks.EthereumHoodi,
+            decimals: 18,
+            contract_address: "0x",
+          },
+        },
+        pending_claimable_balance: {
+          amount: "1000000000000000000",
+          asset: {
+            asset_id: Coinbase.assets.Eth,
+            network_id: Coinbase.networks.EthereumHoodi,
             decimals: 18,
             contract_address: "0x",
           },
@@ -390,7 +405,7 @@ describe("WalletAddress", () => {
           amount: "1000000000000000000",
           asset: {
             asset_id: Coinbase.assets.Eth,
-            network_id: Coinbase.networks.EthereumHolesky,
+            network_id: Coinbase.networks.EthereumHoodi,
             decimals: 18,
             contract_address: "0x",
           },
@@ -450,7 +465,7 @@ describe("WalletAddress", () => {
             amount: "32000000000000000000",
             asset: {
               asset_id: Coinbase.assets.Eth,
-              network_id: Coinbase.networks.EthereumHolesky,
+              network_id: Coinbase.networks.EthereumHoodi,
               decimals: 18,
             },
           },
@@ -458,7 +473,7 @@ describe("WalletAddress", () => {
             amount: "2000000000000000000",
             asset: {
               asset_id: Coinbase.assets.Eth,
-              network_id: Coinbase.networks.EthereumHolesky,
+              network_id: Coinbase.networks.EthereumHoodi,
               decimals: 18,
             },
           },
@@ -471,7 +486,7 @@ describe("WalletAddress", () => {
             amount: "34000000000000000000",
             asset: {
               asset_id: Coinbase.assets.Eth,
-              network_id: Coinbase.networks.EthereumHolesky,
+              network_id: Coinbase.networks.EthereumHoodi,
               decimals: 18,
             },
           },
@@ -479,7 +494,7 @@ describe("WalletAddress", () => {
             amount: "3000000000000000000",
             asset: {
               asset_id: Coinbase.assets.Eth,
-              network_id: Coinbase.networks.EthereumHolesky,
+              network_id: Coinbase.networks.EthereumHoodi,
               decimals: 18,
             },
           },
@@ -519,30 +534,97 @@ describe("WalletAddress", () => {
         expect(op).toBeInstanceOf(StakingOperation);
       });
 
-      it("should create a staking operation from the address but in failed status", async () => {
-        Coinbase.apiClients.asset!.getAsset = getAssetMock();
-        Coinbase.apiClients.stake!.getStakingContext = mockReturnValue(STAKING_CONTEXT_MODEL);
-        Coinbase.apiClients.walletStake!.createStakingOperation =
-          mockReturnValue(STAKING_OPERATION_MODEL);
-        Coinbase.apiClients.walletStake!.broadcastStakingOperation =
-          mockReturnValue(STAKING_OPERATION_MODEL);
-        STAKING_OPERATION_MODEL.status = StakingOperationStatusEnum.Failed;
-        Coinbase.apiClients.walletStake!.getStakingOperation =
-          mockReturnValue(STAKING_OPERATION_MODEL);
+      describe("native eth staking", () => {
+        it("should successfully create an 0x01 stake operation", async () => {
+          Coinbase.apiClients.asset!.getAsset = getAssetMock();
+          Coinbase.apiClients.stake!.getStakingContext = mockReturnValue(STAKING_CONTEXT_MODEL);
+          Coinbase.apiClients.walletStake!.createStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          Coinbase.apiClients.walletStake!.broadcastStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          STAKING_OPERATION_MODEL.status = StakingOperationStatusEnum.Complete;
+          Coinbase.apiClients.walletStake!.getStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
 
-        const op = await walletAddress.createStake(0.001, Coinbase.assets.Eth);
+          const op = await walletAddress.createStake(
+            32,
+            Coinbase.assets.Eth,
+            StakeOptionsMode.NATIVE,
+            {
+              withdrawal_credential_type: "0x01",
+            },
+          );
 
-        expect(op).toBeInstanceOf(StakingOperation);
-        expect(op.getStatus()).toEqual(StakingOperationStatusEnum.Failed);
-      });
+          expect(Coinbase.apiClients.walletStake!.createStakingOperation).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              network_id: walletAddress.getNetworkId(),
+              asset_id: Coinbase.assets.Eth,
+              action: "stake",
+              options: {
+                mode: StakeOptionsMode.NATIVE,
+                amount: "32000000000000000000",
+                withdrawal_credential_type: "0x01",
+              },
+            },
+          );
+          expect(op).toBeInstanceOf(StakingOperation);
+        });
 
-      it("should not create a staking operation from the address with zero amount", async () => {
-        Coinbase.apiClients.asset!.getAsset = getAssetMock();
-        Coinbase.apiClients.stake!.getStakingContext = mockReturnValue(STAKING_CONTEXT_MODEL);
+        it("should successfully create an 0x02 stake operation", async () => {
+          Coinbase.apiClients.asset!.getAsset = getAssetMock();
+          Coinbase.apiClients.stake!.getStakingContext = mockReturnValue(STAKING_CONTEXT_MODEL);
+          Coinbase.apiClients.walletStake!.createStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          Coinbase.apiClients.walletStake!.broadcastStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          STAKING_OPERATION_MODEL.status = StakingOperationStatusEnum.Complete;
+          Coinbase.apiClients.walletStake!.getStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
 
-        await expect(
-          async () => await walletAddress.createStake(0.0, Coinbase.assets.Eth),
-        ).rejects.toThrow(Error);
+          const op = await walletAddress.createStake(
+            64,
+            Coinbase.assets.Eth,
+            StakeOptionsMode.NATIVE,
+            {
+              withdrawal_credential_type: "0x02",
+            },
+          );
+
+          expect(Coinbase.apiClients.walletStake!.createStakingOperation).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              network_id: walletAddress.getNetworkId(),
+              asset_id: Coinbase.assets.Eth,
+              action: "stake",
+              options: {
+                mode: StakeOptionsMode.NATIVE,
+                amount: "64000000000000000000",
+                withdrawal_credential_type: "0x02",
+              },
+            },
+          );
+          expect(op).toBeInstanceOf(StakingOperation);
+        });
+
+        it("should create a staking operation from the address but in failed status", async () => {
+          Coinbase.apiClients.asset!.getAsset = getAssetMock();
+          Coinbase.apiClients.stake!.getStakingContext = mockReturnValue(STAKING_CONTEXT_MODEL);
+          Coinbase.apiClients.walletStake!.createStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          Coinbase.apiClients.walletStake!.broadcastStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          STAKING_OPERATION_MODEL.status = StakingOperationStatusEnum.Failed;
+          Coinbase.apiClients.walletStake!.getStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+
+          const op = await walletAddress.createStake(0.001, Coinbase.assets.Eth);
+
+          expect(op).toBeInstanceOf(StakingOperation);
+          expect(op.getStatus()).toEqual(StakingOperationStatusEnum.Failed);
+        });
       });
 
       it("should create a staking operation from the address when broadcast returns empty transactions", async () => {
@@ -579,6 +661,94 @@ describe("WalletAddress", () => {
 
         expect(op).toBeInstanceOf(StakingOperation);
       });
+
+      describe("with native eth consensus layer exits", () => {
+        it("should create a staking operation from the address", async () => {
+          Coinbase.apiClients.asset!.getAsset = getAssetMock();
+          Coinbase.apiClients.walletStake!.createStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          Coinbase.apiClients.walletStake!.broadcastStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          STAKING_OPERATION_MODEL.status = StakingOperationStatusEnum.Complete;
+          Coinbase.apiClients.walletStake!.getStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+
+          const builder = new ConsensusLayerExitOptionBuilder();
+          builder.addValidator("0x123");
+          builder.addValidator("0x456");
+          builder.addValidator("0x456");
+          builder.addValidator("0x789");
+          builder.addValidator("0x789");
+          const options = await builder.build();
+
+          const op = await walletAddress.createUnstake(
+            0.001,
+            Coinbase.assets.Eth,
+            StakeOptionsMode.NATIVE,
+            options,
+          );
+
+          expect(Coinbase.apiClients.walletStake!.createStakingOperation).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              network_id: walletAddress.getNetworkId(),
+              asset_id: Coinbase.assets.Eth,
+              action: "unstake",
+              options: {
+                mode: StakeOptionsMode.NATIVE,
+                amount: "1000000000000000", // We let this extraneous amount to be passed through since it isn't used in the backend.
+                unstake_type: "consensus",
+                validator_pub_keys: "0x123,0x456,0x789",
+              },
+            },
+          );
+          expect(op).toBeInstanceOf(StakingOperation);
+        });
+      });
+
+      describe("with native eth execution layer withdrawals", () => {
+        it("should create a staking operation from the address", async () => {
+          Coinbase.apiClients.asset!.getAsset = getAssetMock();
+          Coinbase.apiClients.walletStake!.createStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          Coinbase.apiClients.walletStake!.broadcastStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+          STAKING_OPERATION_MODEL.status = StakingOperationStatusEnum.Complete;
+          Coinbase.apiClients.walletStake!.getStakingOperation =
+            mockReturnValue(STAKING_OPERATION_MODEL);
+
+          const builder = new ExecutionLayerWithdrawalOptionsBuilder(walletAddress.getNetworkId());
+          builder.addValidatorWithdrawal("0x123", 100);
+          builder.addValidatorWithdrawal("0x456", 200);
+          const options = await builder.build();
+
+          const op = await walletAddress.createUnstake(
+            0.001,
+            Coinbase.assets.Eth,
+            StakeOptionsMode.NATIVE,
+            options,
+          );
+
+          expect(Coinbase.apiClients.walletStake!.createStakingOperation).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              network_id: walletAddress.getNetworkId(),
+              asset_id: Coinbase.assets.Eth,
+              action: "unstake",
+              options: {
+                mode: StakeOptionsMode.NATIVE,
+                unstake_type: "execution",
+                amount: "1000000000000000", // We let this extraneous amount to be passed through since it isn't used in the backend.
+                validator_unstake_amounts:
+                  '{"0x123":"100000000000000000000","0x456":"200000000000000000000"}',
+              },
+            },
+          );
+          expect(op).toBeInstanceOf(StakingOperation);
+        });
+      });
     });
 
     describe("#createClaimStake", () => {
@@ -599,11 +769,45 @@ describe("WalletAddress", () => {
       });
     });
 
+    describe("#createValidatorConsolidation", () => {
+      it("should successfully create a validator consolidation operation", async () => {
+        Coinbase.apiClients.walletStake!.createStakingOperation =
+          mockReturnValue(STAKING_OPERATION_MODEL);
+        Coinbase.apiClients.walletStake!.broadcastStakingOperation =
+          mockReturnValue(STAKING_OPERATION_MODEL);
+        Coinbase.apiClients.walletStake!.getStakingOperation =
+          mockReturnValue(STAKING_OPERATION_MODEL);
+
+        const op = await walletAddress.createValidatorConsolidation({
+          source_validator_pubkey: "0xabc123",
+          target_validator_pubkey: "0xdef456",
+        });
+
+        expect(Coinbase.apiClients.walletStake!.createStakingOperation).toHaveBeenCalledWith(
+          walletAddress.getWalletId(),
+          walletAddress.getId(),
+          {
+            network_id: walletAddress.getNetworkId(),
+            asset_id: "eth",
+            action: "consolidate",
+            options: {
+              mode: "native",
+              amount: "0",
+              source_validator_pubkey: "0xabc123",
+              target_validator_pubkey: "0xdef456",
+            },
+          },
+        );
+
+        expect(op).toBeInstanceOf(StakingOperation);
+      });
+    });
+
     describe("#stakeableBalance", () => {
       it("should return the stakeable balance successfully with default params", async () => {
         Coinbase.apiClients.stake!.getStakingContext = mockReturnValue(STAKING_CONTEXT_MODEL);
         const stakeableBalance = await walletAddress.stakeableBalance(Coinbase.assets.Eth);
-        expect(stakeableBalance).toEqual(new Decimal("3"));
+        expect(stakeableBalance).toEqual(new Decimal("128"));
       });
     });
 
@@ -644,14 +848,12 @@ describe("WalletAddress", () => {
         expect(response[0].bondedStake().amount).toEqual(new Decimal("32"));
         expect(response[0].bondedStake().asset?.assetId).toEqual(Coinbase.assets.Eth);
         expect(response[0].bondedStake().asset?.decimals).toEqual(18);
-        expect(response[0].bondedStake().asset?.networkId).toEqual(
-          Coinbase.networks.EthereumHolesky,
-        );
+        expect(response[0].bondedStake().asset?.networkId).toEqual(Coinbase.networks.EthereumHoodi);
         expect(response[0].unbondedBalance().amount).toEqual(new Decimal("2"));
         expect(response[0].unbondedBalance().asset?.assetId).toEqual(Coinbase.assets.Eth);
         expect(response[0].unbondedBalance().asset?.decimals).toEqual(18);
         expect(response[0].unbondedBalance().asset?.networkId).toEqual(
-          Coinbase.networks.EthereumHolesky,
+          Coinbase.networks.EthereumHoodi,
         );
       });
     });
@@ -707,6 +909,63 @@ describe("WalletAddress", () => {
       expect(transfer.getId()).toBe(VALID_TRANSFER_MODEL.transfer_id);
     });
 
+    it("should default skipBatching to false", async () => {
+      Coinbase.apiClients.transfer!.createTransfer = mockReturnValue(VALID_TRANSFER_MODEL);
+      Coinbase.apiClients.transfer!.broadcastTransfer = mockReturnValue({
+        transaction_hash: "0x6c087c1676e8269dd81e0777244584d0cbfd39b6997b3477242a008fa9349e11",
+        ...VALID_TRANSFER_MODEL,
+      });
+
+      await address.createTransfer({
+        amount: weiAmount,
+        assetId: Coinbase.assets.Wei,
+        destination,
+      });
+
+      expect(Coinbase.apiClients.transfer!.createTransfer).toHaveBeenCalledWith(
+        address.getWalletId(),
+        address.getId(),
+        expect.objectContaining({
+          skip_batching: false,
+        }),
+      );
+    });
+
+    it("should allow skipBatching to be set to true", async () => {
+      Coinbase.apiClients.transfer!.createTransfer = mockReturnValue(VALID_TRANSFER_MODEL);
+      Coinbase.apiClients.transfer!.broadcastTransfer = mockReturnValue({
+        transaction_hash: "0x6c087c1676e8269dd81e0777244584d0cbfd39b6997b3477242a008fa9349e11",
+        ...VALID_TRANSFER_MODEL,
+      });
+
+      await address.createTransfer({
+        amount: weiAmount,
+        assetId: Coinbase.assets.Wei,
+        destination,
+        gasless: true,
+        skipBatching: true,
+      });
+
+      expect(Coinbase.apiClients.transfer!.createTransfer).toHaveBeenCalledWith(
+        address.getWalletId(),
+        address.getId(),
+        expect.objectContaining({
+          skip_batching: true,
+        }),
+      );
+    });
+
+    it("should throw an ArgumentError if skipBatching is true but gasless is false", async () => {
+      await expect(
+        address.createTransfer({
+          amount: weiAmount,
+          assetId: Coinbase.assets.Wei,
+          destination,
+          skipBatching: true,
+        }),
+      ).rejects.toThrow(ArgumentError);
+    });
+
     it("should successfully construct createTransfer request when using a large number that causes scientific notation", async () => {
       Coinbase.apiClients.transfer!.createTransfer = mockReturnValue(VALID_TRANSFER_MODEL);
       Coinbase.apiClients.transfer!.broadcastTransfer = mockReturnValue({
@@ -745,6 +1004,7 @@ describe("WalletAddress", () => {
           destination: destination.getId(),
           gasless: false,
           network_id: Coinbase.networks.BaseSepolia,
+          skip_batching: false,
         },
       );
 
@@ -1183,10 +1443,10 @@ describe("WalletAddress", () => {
   });
 
   describe("#invokeContract", () => {
-    let key = ethers.Wallet.createRandom();
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
-    let unsignedPayload = VALID_CONTRACT_INVOCATION_MODEL.transaction.unsigned_payload;
+    const unsignedPayload = VALID_CONTRACT_INVOCATION_MODEL.transaction.unsigned_payload;
     let expectedSignedPayload: string;
 
     beforeAll(() => {
@@ -1274,8 +1534,8 @@ describe("WalletAddress", () => {
 
       describe("when it is successful invoking a payable contract method", () => {
         let contractInvocation;
-        let amount = new Decimal("1000");
-        let balanceResponse = { amount: "5000000", asset: { asset_id: "eth", decimals: 18 } };
+        const amount = new Decimal("1000");
+        const balanceResponse = { amount: "5000000", asset: { asset_id: "eth", decimals: 18 } };
 
         beforeEach(async () => {
           Coinbase.apiClients.contractInvocation!.createContractInvocation = mockReturnValue({
@@ -1361,7 +1621,7 @@ describe("WalletAddress", () => {
       });
 
       describe("when it is fails to invoke a payable contract method", () => {
-        let amount = new Decimal("1000");
+        const amount = new Decimal("1000");
 
         it("throws an error for invalid input", async () => {
           await expect(
@@ -1535,7 +1795,7 @@ describe("WalletAddress", () => {
   });
 
   describe("#deployToken", () => {
-    let key = ethers.Wallet.createRandom();
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
     let expectedSignedPayload: string;
@@ -1831,7 +2091,7 @@ describe("WalletAddress", () => {
   });
 
   describe("#deployNFT", () => {
-    let key = ethers.Wallet.createRandom();
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
     let expectedSignedPayload: string;
@@ -2127,7 +2387,7 @@ describe("WalletAddress", () => {
   });
 
   describe("#deployMultiToken", () => {
-    let key = ethers.Wallet.createRandom();
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
     let expectedSignedPayload: string;
@@ -2402,11 +2662,289 @@ describe("WalletAddress", () => {
     });
   });
 
-  describe("#createPayloadSignature", () => {
-    let key = ethers.Wallet.createRandom();
+  describe("#deployContract", () => {
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
-    let unsignedPayload = VALID_PAYLOAD_SIGNATURE_MODEL.unsigned_payload;
+    let expectedSignedPayload: string;
+
+    beforeAll(() => {
+      Coinbase.apiClients.smartContract = smartContractApiMock;
+    });
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+
+      addressModel = newAddressModel(randomUUID(), randomUUID(), Coinbase.networks.BaseSepolia);
+    });
+
+    describe("when not using a server-signer", () => {
+      beforeEach(async () => {
+        Coinbase.useServerSigner = false;
+
+        walletAddress = new WalletAddress(addressModel, key as unknown as ethers.Wallet);
+
+        const tx = new Transaction(VALID_SMART_CONTRACT_CUSTOM_MODEL.transaction!);
+        expectedSignedPayload = await tx.sign(key as unknown as ethers.Wallet);
+      });
+
+      describe("when it is successful", () => {
+        let smartContract;
+
+        beforeEach(async () => {
+          Coinbase.apiClients.smartContract!.compileSmartContract = mockReturnValue({
+            ...VALID_COMPILED_CONTRACT_MODEL,
+          });
+
+          Coinbase.apiClients.smartContract!.createSmartContract = mockReturnValue({
+            ...VALID_SMART_CONTRACT_CUSTOM_MODEL,
+            deployer_address: walletAddress.getId(),
+            wallet_id: walletAddress.getWalletId(),
+          });
+
+          Coinbase.apiClients.smartContract!.deploySmartContract = mockReturnValue({
+            ...VALID_SMART_CONTRACT_CUSTOM_MODEL,
+            address_id: walletAddress.getId(),
+            wallet_id: walletAddress.getWalletId(),
+          });
+
+          smartContract = await walletAddress.deployContract({
+            solidityVersion: "0.8.0",
+            solidityInputJson: "{}",
+            contractName: "TestContract",
+            constructorArgs: {
+              arg1: "arg1",
+              arg2: "arg2",
+            },
+          });
+        });
+
+        it("returns a smart contract", async () => {
+          expect(smartContract).toBeInstanceOf(SmartContract);
+          expect(smartContract.getId()).toBe(VALID_SMART_CONTRACT_CUSTOM_MODEL.smart_contract_id);
+        });
+
+        it("creates the smart contract", async () => {
+          expect(Coinbase.apiClients.smartContract!.createSmartContract).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              type: SmartContractType.Custom,
+              options: `{"arg1":"arg1","arg2":"arg2"}`,
+              compiled_smart_contract_id: "test-compiled-contract-1",
+            },
+          );
+          expect(Coinbase.apiClients.smartContract!.createSmartContract).toHaveBeenCalledTimes(1);
+        });
+
+        it("broadcasts the smart contract", async () => {
+          expect(Coinbase.apiClients.smartContract!.deploySmartContract).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            VALID_SMART_CONTRACT_CUSTOM_MODEL.smart_contract_id,
+            {
+              signed_payload: expectedSignedPayload,
+            },
+          );
+
+          expect(Coinbase.apiClients.smartContract!.deploySmartContract).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe("when it is successful deploying a smart contract", () => {
+        let smartContract;
+
+        beforeEach(async () => {
+          Coinbase.apiClients.smartContract!.createSmartContract = mockReturnValue({
+            ...VALID_SMART_CONTRACT_CUSTOM_MODEL,
+            deployer_address: walletAddress.getId(),
+            wallet_id: walletAddress.getWalletId(),
+          });
+
+          Coinbase.apiClients.smartContract!.deploySmartContract = mockReturnValue({
+            ...VALID_SMART_CONTRACT_CUSTOM_MODEL,
+            deployer_address: walletAddress.getId(),
+            wallet_id: walletAddress.getWalletId(),
+          });
+
+          Coinbase.apiClients.smartContract!.getSmartContract = mockReturnValue(
+            VALID_SMART_CONTRACT_CUSTOM_MODEL,
+          );
+
+          smartContract = await walletAddress.deployContract({
+            solidityVersion: "0.8.0",
+            solidityInputJson: "{}",
+            contractName: "TestContract",
+            constructorArgs: {
+              arg1: "arg1",
+              arg2: "arg2",
+            },
+          });
+        });
+
+        it("returns a smart contract", async () => {
+          expect(smartContract).toBeInstanceOf(SmartContract);
+          expect(smartContract.getId()).toBe(VALID_SMART_CONTRACT_CUSTOM_MODEL.smart_contract_id);
+        });
+
+        it("creates the smart contract", async () => {
+          expect(Coinbase.apiClients.smartContract!.createSmartContract).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              type: SmartContractType.Custom,
+              options: `{"arg1":"arg1","arg2":"arg2"}`,
+              compiled_smart_contract_id: "test-compiled-contract-1",
+            },
+          );
+          expect(Coinbase.apiClients.smartContract!.createSmartContract).toHaveBeenCalledTimes(1);
+        });
+
+        it("broadcasts the smart contract", async () => {
+          expect(Coinbase.apiClients.smartContract!.deploySmartContract).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            VALID_SMART_CONTRACT_CUSTOM_MODEL.smart_contract_id,
+            {
+              signed_payload: expectedSignedPayload,
+            },
+          );
+
+          expect(Coinbase.apiClients.smartContract!.deploySmartContract).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe("when no key is loaded", () => {
+        beforeEach(() => {
+          walletAddress = new WalletAddress(addressModel);
+        });
+
+        it("throws an error", async () => {
+          await expect(
+            walletAddress.deployContract({
+              solidityVersion: "0.8.0",
+              solidityInputJson: "{}",
+              contractName: "TestContract",
+              constructorArgs: ["arg1", "arg2"],
+            }),
+          ).rejects.toThrow(Error);
+        });
+      });
+
+      describe("when it fails to create a smart contract", () => {
+        beforeEach(() => {
+          Coinbase.apiClients.smartContract!.createSmartContract = mockReturnRejectedValue(
+            new APIError({
+              response: {
+                status: 400,
+                data: {
+                  code: "malformed_request",
+                  message: "failed to create smart contract: invalid abi",
+                },
+              },
+            } as AxiosError),
+          );
+        });
+
+        it("throws an error", async () => {
+          await expect(
+            walletAddress.deployContract({
+              solidityVersion: "0.8.0",
+              solidityInputJson: "{}",
+              contractName: "TestContract",
+              constructorArgs: ["arg1", "arg2"],
+            }),
+          ).rejects.toThrow(APIError);
+        });
+      });
+
+      describe("when it fails to broadcast a smart contract", () => {
+        beforeEach(() => {
+          Coinbase.apiClients.smartContract!.createSmartContract = mockReturnValue({
+            ...VALID_SMART_CONTRACT_CUSTOM_MODEL,
+            address_id: walletAddress.getId(),
+            wallet_id: walletAddress.getWalletId(),
+          });
+
+          Coinbase.apiClients.smartContract!.deploySmartContract = mockReturnRejectedValue(
+            new APIError({
+              response: {
+                status: 400,
+                data: {
+                  code: "invalid_signed_payload",
+                  message: "failed to broadcast smart contract: invalid signed payload",
+                },
+              },
+            } as AxiosError),
+          );
+        });
+
+        it("throws an error", async () => {
+          await expect(
+            walletAddress.deployContract({
+              solidityVersion: "0.8.0",
+              solidityInputJson: "{}",
+              contractName: "TestContract",
+              constructorArgs: ["arg1", "arg2"],
+            }),
+          ).rejects.toThrow(APIError);
+        });
+      });
+    });
+    describe("when using a server-signer", () => {
+      let smartContract;
+
+      beforeEach(() => {
+        Coinbase.useServerSigner = true;
+        walletAddress = new WalletAddress(addressModel);
+      });
+
+      describe("when it is successful", () => {
+        beforeEach(async () => {
+          Coinbase.apiClients.smartContract!.createSmartContract = mockReturnValue({
+            ...VALID_SMART_CONTRACT_CUSTOM_MODEL,
+            address_id: walletAddress.getId(),
+            wallet_id: walletAddress.getWalletId(),
+          });
+
+          smartContract = await walletAddress.deployContract({
+            solidityVersion: "0.8.0",
+            solidityInputJson: "{}",
+            contractName: "TestContract",
+            constructorArgs: {
+              arg1: "arg1",
+              arg2: "arg2",
+            },
+          });
+        });
+
+        it("returns a pending contract invocation", async () => {
+          expect(smartContract).toBeInstanceOf(SmartContract);
+          expect(smartContract.getId()).toBe(VALID_SMART_CONTRACT_CUSTOM_MODEL.smart_contract_id);
+          expect(smartContract.getTransaction().getStatus()).toBe(TransactionStatus.PENDING);
+        });
+
+        it("creates a contract invocation", async () => {
+          expect(Coinbase.apiClients.smartContract!.createSmartContract).toHaveBeenCalledWith(
+            walletAddress.getWalletId(),
+            walletAddress.getId(),
+            {
+              type: SmartContractType.Custom,
+              options: `{"arg1":"arg1","arg2":"arg2"}`,
+              compiled_smart_contract_id: "test-compiled-contract-1",
+            },
+          );
+          expect(Coinbase.apiClients.smartContract!.createSmartContract).toHaveBeenCalledTimes(1);
+        });
+      });
+    });
+  });
+
+  describe("#createPayloadSignature", () => {
+    const key = ethers.Wallet.createRandom();
+    let addressModel: AddressModel;
+    let walletAddress: WalletAddress;
+    const unsignedPayload = VALID_PAYLOAD_SIGNATURE_MODEL.unsigned_payload;
     let signature: string;
 
     beforeAll(() => {
@@ -2520,10 +3058,10 @@ describe("WalletAddress", () => {
   });
 
   describe("#getPayloadSignature", () => {
-    let key = ethers.Wallet.createRandom();
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
-    let payloadSignatureId = VALID_PAYLOAD_SIGNATURE_MODEL.payload_signature_id;
+    const payloadSignatureId = VALID_PAYLOAD_SIGNATURE_MODEL.payload_signature_id;
 
     beforeAll(() => {
       Coinbase.apiClients.address = addressesApiMock;
@@ -2571,7 +3109,7 @@ describe("WalletAddress", () => {
   });
 
   describe("#listPayloadSignatures", () => {
-    let key = ethers.Wallet.createRandom();
+    const key = ethers.Wallet.createRandom();
     let addressModel: AddressModel;
     let walletAddress: WalletAddress;
 
