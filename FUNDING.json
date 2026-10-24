@@ -1,0 +1,13 @@
+{
+  "drips": {
+    "ethereum": {
+      "ownedBy": "0xA9D1e08C7793af67e9d92fe308d5697FB81d3E43"
+    },
+    "base": {
+      "ownedBy": "0xA9D1e08C7793af67e9d92fe308d5697FB81d3E43"
+    }
+  },
+  "portal.cdp.coinbase.com": {
+    "projectId": "dfaa25d7-f0e4-4219-8cea-596af2a409d1"
+  }
+}
